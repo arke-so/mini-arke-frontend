@@ -488,6 +488,7 @@
   "Enter New Password": "Inserisci la nuova password",
   "Enter Your Note": "Scrivi la tua nota...",
   "Error": "Errore",
+  "Error Fetching Active Sales": "Siamo spiacenti, si è verificato un errore durante il recupero delle vendite in corso",
   "Error Fetching Attachments List": "Si è verificato un errore durante il recupero degli allegati",
   "Error Fetching Supply Needs": "Errore nel calcolo del fabbisogno",
   "Error Loading Notes": "Errore nel caricamento delle note",

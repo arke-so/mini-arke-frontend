@@ -488,6 +488,7 @@
   "Enter New Password": "Enter new password",
   "Enter Your Note": "Enter your note...",
   "Error": "Error",
+  "Error Fetching Active Sales": "Sorry, an error occurred while fetching the active sales",
   "Error Fetching Attachments List": "An error occurred while fetching the attachments list",
   "Error Fetching Supply Needs": "Error fetching supply needs",
   "Error Loading Notes": "Error loading notes",
