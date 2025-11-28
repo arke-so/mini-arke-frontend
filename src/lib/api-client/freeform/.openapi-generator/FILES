@@ -1,0 +1,11 @@
+apis/DataApi.ts
+apis/DefaultApi.ts
+apis/DefinitionsApi.ts
+apis/index.ts
+index.ts
+models/DataDetails.ts
+models/DateAttr.ts
+models/DefinitionDetails.ts
+models/UserAttr.ts
+models/index.ts
+runtime.ts

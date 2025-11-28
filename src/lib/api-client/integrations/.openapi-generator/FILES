@@ -1,0 +1,13 @@
+apis/DefaultApi.ts
+apis/WebhooksApi.ts
+apis/index.ts
+index.ts
+models/CustomerSimple.ts
+models/ModelApiResponse.ts
+models/OrderSimple.ts
+models/OrderSimpleShippingAddress.ts
+models/ProductSimple.ts
+models/ProductWithQuantity.ts
+models/WebhookDetails.ts
+models/index.ts
+runtime.ts

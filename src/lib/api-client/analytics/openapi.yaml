@@ -1,0 +1,146 @@
+openapi: 3.0.2
+info:
+  title: Arke Analytics API
+  version: v1
+servers:
+  - url: /api/v1
+paths:
+  "/analytics/database/_ask":
+    post:
+      operationId: dbAsk
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/dbQuestion'
+      responses:
+        200:
+          description: output
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/dbAnswer'
+  "/analytics/database/_replay":
+    post:
+      operationId: dbReplay
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/dbQuestion'
+      responses:
+        200:
+          description: output
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/dbAnswer'
+  "/analytics/agent/_ask":
+    post:
+      operationId: agentAsk
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/agentQuestion'
+      responses:
+        "200":
+          description: Successful response from the agent.
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/agentAnswer'
+components:
+  schemas:
+    dbQuestion:
+      required:
+        - ask
+      properties:
+        ask:
+          type: string
+        model:
+          type: string
+          enum:
+            - gemini-2.0-flash
+          default: gemini-2.0-flash
+    dbAnswer:
+      required:
+        - query
+        - encrypted_query
+        - columns
+        - results
+      properties:
+        query:
+          type: string
+        encrypted_query:
+          type: string
+        description:
+          type: string
+        columns:
+          type: array
+          items:
+            type: string
+        error:
+          type: string
+        results:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    agentQuestion:
+      type: object
+      required:
+        - ask
+        - history
+      properties:
+        ask:
+          type: string
+          description: The question to ask the agent
+        model:
+          type: string
+          enum:
+            - gemini-2.0-flash
+          default: gemini-2.0-flash
+          description: The model for the agent to use
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/historyItem'
+          description: The conversation history for the agent
+    agentAnswer:
+      type: object
+      required:
+        - answer
+        - history
+        - is_intent
+      properties:
+        answer:
+          type: string
+          description: The agent's response
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/historyItem'
+          description: The updated conversation history
+        is_intent:
+          type: boolean
+        error:
+          type: object
+          description: An object containing error details, if any
+    historyItem:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          description: The role of the entity providing the history (e.g., 'user', 'model').
+        content:
+          type: string          

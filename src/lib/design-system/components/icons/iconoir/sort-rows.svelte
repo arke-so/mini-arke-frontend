@@ -1,0 +1,55 @@
+<script lang="ts">
+  import type { SVGAttributes } from 'svelte/elements'
+
+  type $$Props = SVGAttributes<SVGElement>
+</script>
+
+<svg
+  viewBox="0 0 24 24"
+  stroke-width="1.5"
+  fill="none"
+  color="currentColor"
+  data-darkreader-inline-color=""
+  style="--darkreader-inline-color: #d7d4cf;"
+  {...$$restProps}
+  ><path
+    d="M10 14H2"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-darkreader-inline-stroke=""
+    style="--darkreader-inline-stroke: currentColor;"></path
+  ><path
+    d="M8 10H2"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-darkreader-inline-stroke=""
+    style="--darkreader-inline-stroke: currentColor;"></path
+  ><path
+    d="M6 6H2"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-darkreader-inline-stroke=""
+    style="--darkreader-inline-stroke: currentColor;"></path
+  ><path
+    d="M12 18H2"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-darkreader-inline-stroke=""
+    style="--darkreader-inline-stroke: currentColor;"></path
+  ><path
+    d="M19 20V4M19 20L22 17M19 20L16 17M19 4L22 7M19 4L16 7"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    data-darkreader-inline-stroke=""
+    style="--darkreader-inline-stroke: currentColor;"></path
+  ></svg>

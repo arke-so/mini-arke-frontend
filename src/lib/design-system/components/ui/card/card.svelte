@@ -1,0 +1,21 @@
+<script lang="ts">
+  import { cn } from '$ds/utils.js'
+  import type { HTMLAttributes } from 'svelte/elements'
+
+  type $$Props = HTMLAttributes<HTMLDivElement>
+
+  let className: $$Props['class'] = undefined
+  export { className as class }
+</script>
+
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<div
+  class={cn('rounded-lg border bg-card text-card-foreground shadow-sm', className)}
+  {...$$restProps}
+  on:click
+  on:focusin
+  on:focusout
+  on:mouseenter
+  on:mouseleave>
+  <slot />
+</div>

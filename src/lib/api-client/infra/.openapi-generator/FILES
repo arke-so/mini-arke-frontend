@@ -1,0 +1,12 @@
+apis/DefaultApi.ts
+apis/index.ts
+index.ts
+models/Email.ts
+models/EmailAttachment.ts
+models/ListDocuments200ResponseInner.ts
+models/QuantifiedItem.ts
+models/SearchDoc.ts
+models/SearchDocHighlightsInner.ts
+models/StoreDocumentRequest.ts
+models/index.ts
+runtime.ts

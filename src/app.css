@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 24 9.8% 10%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 20 6% 90%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 72.22% 50.59%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 20 14.3% 4.1%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 12 6% 15%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 12 8% 12%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 24 10% 10%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 60 9.1% 97.8%;
+    --primary-foreground: 24 9.8% 10%;
+    --secondary: 33 5% 32%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 33 5% 32%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 25 6.88% 27.87%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 70% 35%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 33 5% 32%;
+    --input: 33 5% 32%;
+    --ring: 24 5.7% 82.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', 'Inter Variable', 'system-ui';
+  }
+  ::selection {
+    @apply bg-teal-200 text-primary dark:bg-teal-600 dark:text-white;
+  }
+
+  :root {
+    --error: 355 78% 56%;
+    --error-foreground: 0 0% 100%;
+
+    --warning: 24.58 94.98% 53.14%;
+    --warning-foreground: 0 0% 100%;
+
+    --success: 131.22 79.55% 38.19%;
+    --success-foreground: 0 0% 100%;
+
+    --info: 201 98% 41%;
+    --info-foreground: 0 0% 100%;
+
+    --view-transition-duration: 150ms;
+  }
+
+  [style*='zoom-in']::view-transition-old(root),
+  [style*='zoom-in']::view-transition-new(root) {
+    animation: 300ms ease-out both zoom-in;
+  }
+
+  [style*='zoom-out']::view-transition-old(root),
+  [style*='zoom-out']::view-transition-new(root) {
+    animation: var(--view-transition-duration) ease-out both zoom-out;
+  }
+
+  [style*='slide-in']::view-transition-old(root),
+  [style*='slide-in']::view-transition-new(root) {
+    animation: var(--view-transition-duration) ease-out both slide-in;
+  }
+
+  [style*='slide-out']::view-transition-old(root),
+  [style*='slide-out']::view-transition-new(root) {
+    animation: var(--view-transition-duration) ease-out both slide-out;
+  }
+
+  [style*='normal']::view-transition-old(root),
+  [style*='normal']::view-transition-new(root) {
+    animation: 100ms ease-out both fade;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 bg-muted h-2;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-stone-200 dark:bg-stone-500;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-stone-300 dark:bg-stone-400;
+  }
+
+  .scrollbar-on-hover::-webkit-scrollbar,
+  .scrollbar-on-hover::-webkit-scrollbar-thumb {
+    @apply invisible;
+  }
+  .scrollbar-on-hover:hover::-webkit-scrollbar,
+  .scrollbar-on-hover:hover::-webkit-scrollbar-thumb {
+    @apply visible;
+  }
+}
+
+@layer utilities {
+  .attention-seeker {
+    position: relative;
+    animation: attention-seeker 4s;
+    box-shadow: 0 0 0 2em transparent;
+    animation-iteration-count: 1;
+  }
+
+  .attention-seeker.infinite {
+    animation-iteration-count: infinite;
+  }
+}
+
+@layer components {
+  @media (max-width: 639px) {
+    input,
+    select,
+    textarea,
+    button {
+      @apply !text-base;
+    }
+  }
+}
+
+@keyframes attention-seeker {
+  0% {
+    box-shadow: 0 0 0 0 var(--tw-shadow-color);
+  }
+
+  30% {
+    box-shadow: 0 0 0 0.75em transparent;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(10%);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    transform: translateX(-10%);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(0.9);
+  }
+}
+
+@keyframes zoom-out {
+  from {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0.6;
+  }
+}

@@ -1,0 +1,188 @@
+openapi: 3.0.2
+info:
+  title: Arke IAM API
+  version: v1
+servers:
+  - url: /api/v1
+paths:
+  "/admin/tenant/{tenantId}/search/_wipe":
+    post:
+      operationId: "wipeSearch"
+      x-echosec:
+        function: is_super_admin
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: search engine wiped for tenant
+  "/search/_search":
+    get:
+      operationId: "search"
+      x-echosec:
+        function: can_access_tenant
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: search is returned
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '../../common/spec/searchDoc.yaml'
+
+  "/doc/{itemType}/{itemId}":
+    parameters:
+      - name: itemType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listDocuments
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: documents listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  required:
+                    - name
+                    - updated
+                  properties:
+                    name:
+                      type: string
+                    updated:
+                      type: string
+                      format: date-time
+    put:
+      operationId: storeDocument
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file
+                - name
+              properties:
+                file:
+                  type: string
+                name:
+                  type: string
+      responses:
+        200:
+          description: "file uploaded"
+  "/doc/{itemType}/{itemId}/{fileName}":
+    parameters:
+      - name: itemType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: fileName
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: retrieveDocument
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: file is returned
+          content:
+            "application/octet-stream":
+              schema:
+                type: string
+                format: binary
+    delete:
+      operationId: deleteDocument
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: file is deleted
+
+  "/internal/email/_send":
+    post:
+      operationId: sendEmail
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/email'
+      responses:
+        200:
+          description: email sent
+
+
+components:
+  schemas:
+    email:
+      required:
+        - recipients
+        - ccs
+        - content_type
+        - subject
+        - content
+      properties:
+        recipients:
+          type: array
+          items:
+            type: string
+        ccs:
+          type: array
+          items:
+            type: string
+        content_type:
+          type: string
+        subject:
+          type: string
+        content:
+          type: string
+        attachment:
+          required:
+            - name
+            - content
+          properties:
+            name:
+              type: string
+            content:
+              type: string
+            path:
+              type: string
+              format: iri-reference
+              example: example/f65887b4-9fda-4cfb-89ce-a429cc49953e
+

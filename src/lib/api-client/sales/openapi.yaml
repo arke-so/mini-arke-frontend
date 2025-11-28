@@ -1,0 +1,1731 @@
+openapi: 3.0.2
+info:
+  title: Arke Product API
+  version: v1
+servers:
+  - url: /api/v1
+tags:
+  - name: admin
+paths:
+  "/admin/tenant/{tenantId}/_wipe":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminWipeTenant
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      summary: wipes the tenant entirely
+      responses:
+        200:
+          description: wiped completed
+
+  "/settings":
+    get:
+      operationId: showSettings
+      summary: shows the Sales-specific settings for the current tenant
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: settings are shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+    put:
+      operationId: updateSettings
+      summary: updates the Sales-specific settings for the current tenant
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/settings'
+      responses:
+        200:
+          description: settings are updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+  "/settings/custom-form/{domainObject}":
+    parameters:
+      - name: domainObject
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: showCustomForm
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: custom form is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+    put:
+      operationId: updateCustomForm
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/customForm'
+      responses:
+        200:
+          description: custom form updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+  "/customer":
+    get:
+      operationId: listCustomers
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_viewer
+        labels:
+          - label: userEqAgent
+            condition: "claims.IsRole('agent')"
+      responses:
+        200:
+          description: customers listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/customerSummary'
+    put:
+      operationId: createCustomer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/customerDetails'
+      responses:
+        201:
+          description: customer created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customerDetails'
+  "/customer/_categories":
+    get:
+      operationId: listCustomerCategories
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: categories are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+  "/customer/_export":
+    get:
+      operationId: exportCustomers
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_viewer
+      responses:
+        200:
+          description: customers successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+
+  "/customer/_lookup":
+    parameters:
+      - name: id
+        in: query
+        required: true
+        schema:
+         type: string
+      - name: x-platform-id
+        in: header
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: lookupCustomer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_viewer
+      responses:
+        200:
+          description: matching customer shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customerDetails'
+
+  "/customer/{customerId}":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showCustomer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_viewer
+      responses:
+        200:
+          description: customer displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customerDetails'
+    put:
+      operationId: updateCustomer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/customerDetails'
+      responses:
+        200:
+          description: customer updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customerDetails'
+    delete:
+      operationId: archiveCustomer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - customer_editor
+      responses:
+        200:
+          description: customer archived
+  "/customer/{customerId}/affiliation":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listAffiliations
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: lists all affiliations
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/affiliation'
+  "/customer/{customerId}/affiliation/{affiliationId}":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: affiliationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showAffiliationDetails
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: affiliation details are shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/affiliation'
+    delete:
+      operationId: deleteAffiliation
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: affiliation deleted
+  "/customer/{customerId}/affiliation/_affiliate/{affiliateId}":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: affiliateId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: affiliateCustomer
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: affiliation succeeded
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/affiliation'
+  "/customer/{customerId}/offer":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      parameters:
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - expired
+              - current
+              - current-and-future
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - draft
+              - sent
+              - accepted
+              - rejected
+      operationId: listOffers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_viewer
+      responses:
+        200:
+          description: offers are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offerSummary'
+    put:
+      operationId: createOffer
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/offerDetails'
+      responses:
+        200:
+          description: offers is creat ed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+  "/customer/{customerId}/offer/_price-list":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getCustomerPriceList
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: price list is returned
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+  "/customer/{customerId}/offer/{offerId}":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: offerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showOffer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_viewer
+      responses:
+        200:
+          description: offers is displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+    put:
+      operationId: updateOffer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/offerDetails'
+      responses:
+        200:
+          description: offer updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+  "/customer/{customerId}/offer/{offerId}/_accept":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: offerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: acceptOffer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_editor
+      responses:
+        200:
+          description: offers is accepted
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+  "/customer/{customerId}/offer/{offerId}/_reject":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: offerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: rejectOffer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_editor
+      responses:
+        200:
+          description: offers is rejected
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+  "/customer/{customerId}/offer/{offerId}/_mark-as-sent":
+    parameters:
+      - name: customerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: offerId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: markAsSentOffer
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_offer_editor
+      responses:
+        200:
+          description: offers marked as sent
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/offerDetails'
+  "/order":
+    get:
+      operationId: listOrders
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: orderBy
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: orderMode
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: salesChannelId
+          in: query
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+        labels:
+          - label: userEqAgent
+            condition: "claims.IsRole('agent')"
+      responses:
+        200:
+          description: orders listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/orderSummary'
+    put:
+      operationId: createOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/orderDetails'
+      responses:
+        201:
+          description: order created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+  "/order/_last_two_month_sales":
+    get:
+      operationId: lastTwoMonthSales
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+      responses:
+        200:
+          description: last two month sales are returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/monthlySales'
+
+  "/order/_active":
+    get:
+      operationId: listActiveOrders
+      parameters:
+        - name: salesChannelId
+          in: query
+          required: false
+          allowEmptyValue: true
+          schema:
+            type: string
+        - name: details
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+        labels:
+          - label: userEqAgent
+            condition: "claims.IsRole('agent')"
+      responses:
+        200:
+          description: active orders listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/activeOrder'
+  "/order/_export":
+    get:
+      operationId: exportOrders
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+      responses:
+        200:
+          description: orders successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+  "/order/{orderId}":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+      responses:
+        200:
+          description: order displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+    put:
+      operationId: updateOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/orderDetails'
+      responses:
+        200:
+          description: order updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+    delete:
+      operationId: archiveOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: order is archived
+  "/order/{orderId}/_compute-completion":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: computeOrderCompletion
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: computation is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/computeOrderCompletionDetails'
+  "/order/{orderId}/_accept":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: acceptOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: order accepted
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+  "/order/{orderId}/_mark-as-sent":
+    post:
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: markOrderAsSent
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: order is marked as sent
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+  "/order/{orderId}/_update-priority":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: priority
+        in: query
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: updateOrderPriority
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: priority updated
+  "/order/{orderId}/_update-expected-shipping-time":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: time
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+    post:
+      operationId: updateExpectedShippingTime
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: expected shipping time updated
+  "/order/{orderId}/_update-sales-channel":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: salesChannelId
+        in: query
+        required: true
+        allowEmptyValue: true
+        schema:
+          type: string
+    post:
+      operationId: updateOrderSalesChannel
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: sales channel on order is updated
+  "/order/{orderId}/quote":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listQuotesByOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+      responses:
+        200:
+          description: quotes listed by order
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/quoteSummary'
+    put:
+      operationId: createQuoteByOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/quoteDetails'
+      responses:
+        200:
+          description: quote is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+  "/order/{orderId}/quote/{quoteId}":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: quoteId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showQuote
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_viewer
+      responses:
+        200:
+          description: quote is shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+    put:
+      operationId: updateQuote
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/quoteDetails'
+      responses:
+        200:
+          description: quote updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+  "/order/{orderId}/quote/{quoteId}/_accept":
+    post:
+      operationId: acceptQuote
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: quote is accepted
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+  "/order/{orderId}/quote/{quoteId}/_mark-as-sent":
+    post:
+      operationId: markAsSentQuote
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: quote is marked as sent
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+  "/order/{orderId}/quote/{quoteId}/_reject":
+    post:
+      operationId: rejectQuote
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      responses:
+        200:
+          description: quote is rejected
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/quoteDetails'
+  "/transport-document":
+    get:
+      operationId: listTransportDocuments
+      summary: lists the transport documents
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: order_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport documents are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/transportDocumentSummary'
+    put:
+      operationId: createTransportDocument
+      summary: creates a transport document
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/transportDocumentDetails'
+      responses:
+        200:
+          description: transport document created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentSummary'
+  "/transport-document/{transportDocumentId}":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showTransportDocument
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport document is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentDetails'
+    put:
+      operationId: updateTransportDocument
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/transportDocumentDetails'
+      responses:
+        200:
+          description: transport document is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentDetails'
+  "/transport-document/{transportDocumentId}/_accept":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: acceptTransportDocument
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      responses:
+        200:
+          description: accepted
+  "/sales-channel":
+    get:
+      operationId: listSalesChannels
+      summary: lists the sales channels
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+           description: sales channels are listed
+           content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/salesChannelSummary'
+    put:
+      operationId: createSalesChannel
+      summary: creates a sales channel
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/salesChannelDetails'
+      responses:
+        200:
+          description: sales channel created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/salesChannelDetails'
+  "/sales-channel/{salesChannelId}":
+    parameters:
+      - name: salesChannelId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showSalesChannel
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: sales channel is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/salesChannelDetails'
+    put:
+      operationId: updateSalesChannel
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/salesChannelDetails'
+      responses:
+        200:
+          description: sales channel is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/salesChannelDetails'
+components:
+  schemas:
+    settings:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - templates
+          properties:
+            templates:
+              $ref: '#/components/schemas/templates_attr'
+            agents:
+              type: boolean
+            offers:
+              type: boolean
+    templates_attr:
+      required:
+        - sales_order_id_template
+        - sales_quote_id_template
+        - td_id_template
+      properties:
+        sales_order_id_template:
+          type: string
+        sales_quote_id_template:
+          type: string
+        td_id_template:
+          type: string
+    customerSummary:
+      required:
+        - name
+        - categories
+        - vat_no
+        - phones
+        - emails
+        - default_currency
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        vat_no:
+          type: string
+        phones:
+          type: array
+          items:
+            $ref: '../../common/spec/phoneAttr.yaml'
+        default_currency:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '../../common/spec/emailAttr.yaml'
+    customerDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/customerSummary'
+        - required:
+            - addresses
+          properties:
+            description:
+              type: string
+            addresses:
+              type: array
+              items:
+                $ref: '../../common/spec/addressAttr.yaml'
+            contact_name:
+              type: string
+            website:
+              type: string
+            agent:
+              $ref: '../../common/spec/userAttr.yaml'
+            preferred_payment_method:
+              type: string
+    orderSummary:
+      required:
+        - status
+        - total_vat_incl
+        - expected_shipping_time
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        external_id:
+          type: string
+        time:
+          type: string
+          format: date-time
+        priority:
+          type: integer
+        status:
+          type: string
+          enum:
+            - draft
+            - accepted
+            - sent
+        default_currency:
+          type: string
+        total_vat_incl:
+          type: number
+          format: float
+        expected_shipping_time:
+          type: string
+          format: date-time
+        customer_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        shipped:
+          type: string
+          enum:
+            - completed
+            - not shipped
+            - partial
+        sales_channel_attr:
+          $ref: '../../common/spec/genericAttr.yaml'
+
+    orderDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/orderSummary'
+        - required:
+            - customer_id
+            - products
+            - total
+            - shipping_address
+          properties:
+            customer_id:
+              type: string
+              format: uuid
+            shipping_address:
+              type: string
+            products:
+              type: array
+              items:
+                $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+            total:
+              type: number
+              format: float
+            supplier_attr:
+              $ref: '../../common/spec/companyAttr.yaml'
+            quote_internal_id:
+              type: string
+            payment_method:
+              type: string
+            proxy:
+              $ref: '../../common/spec/companyAttr.yaml'
+            agent:
+              $ref: '../../common/spec/userAttr.yaml'
+            proxy_agent:
+              $ref: '../../common/spec/userAttr.yaml'
+            sales_channel_id:
+              type: string
+            
+    activeOrder:
+      allOf:
+        - $ref: '#/components/schemas/orderSummary'
+        - required:
+            - products
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '#/components/schemas/activeOrderProduct'
+
+    activeOrderProduct:
+      required:
+        - name
+        - extra_id
+        - quantity
+        - uom
+        - available
+        - shipped
+      properties:
+        id:
+          type: string
+          format: uuid
+        extra_id:
+          type: string
+          minLength: 0
+        name:
+          type: string
+        quantity:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: false
+        uom:
+          type: string
+        prices:
+          $ref: '../../common/spec/pricesAttr.yaml'
+        available:
+          type: number
+          format: float
+        shipped:
+          type: number
+          format: float
+
+    transportDocumentSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - status
+        - order_id
+        - order_internal_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - accepted
+            - sent
+        time:
+          type: string
+          format: date-time
+        order_internal_id:
+          type: string
+        order_id:
+          type: string
+          format: uuid
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+    transportDocumentDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/transportDocumentSummary'
+        - required:
+            - products
+            - shipping_address
+          properties:
+            weight:
+              type: number
+              format: float
+            products:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            shipping_address:
+              type: string
+            order:
+              $ref: '#/components/schemas/orderDetails'
+            carrier:
+              type: string
+            reason:
+              type: string
+    quoteSummary:
+      required:
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - sent
+            - accepted
+            - rejected
+        time:
+          type: string
+          format: date-time
+        sales_channel_attr:
+          $ref: '../../common/spec/genericAttr.yaml'
+    "computeOrderCompletionDetails":
+      required:
+        - products
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/computeOrderCompletionItem'
+    "computeOrderCompletionItem":
+      required:
+        - name
+        - id
+        - extra_id
+        - uom
+        - expected
+        - delivered
+      properties:
+        name:
+          type: string
+        extra_id:
+          type: string
+        id:
+          type: string
+          format: uuid
+        uom:
+          type: string
+        expected:
+          type: number
+          format: float
+        delivered:
+          type: number
+          format: float
+    "customForm":
+      required:
+        - definitions
+      properties:
+        generation:
+          type: integer
+        definitions:
+          type: array
+          items:
+            $ref: '../../common/spec/customFieldDefinitionAttr.yaml'
+    quoteDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/quoteSummary'
+        - required:
+            - products
+            - expected_shipping_time
+            - total
+            - total_vat_incl
+            - shipping_address
+            - expires_at
+            - order_id
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+            expected_shipping_time:
+              type: string
+              format: date-time
+            customer_attr:
+              $ref: '../../common/spec/companyAttr.yaml'
+            customer_id:
+              type: string
+              format: uuid
+            total:
+              type: number
+              format: float
+            total_vat_incl:
+              type: number
+              format: float
+            default_currency:
+              type: string
+            shipping_address:
+              type: string
+            payment_method:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+            order_id:
+              type: string
+              format: uuid
+            external_id:
+              type: string
+            supplier_attr:
+              $ref: '../../common/spec/companyAttr.yaml'
+            sales_channel_id:
+              type: string
+
+    monthlySales:
+      type: object
+      required:
+        - month
+        - total
+        - order_count
+      properties:
+        month:
+          type: string
+        total:
+          type: number
+          format: float
+        order_count:
+          type: integer
+
+    salesChannelSummary:
+      type: object
+      required:
+        - name
+        - type
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - b2b
+            - e-commerce
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+    salesChannelDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/salesChannelSummary'
+
+    offerSummary:
+      required:
+        - name
+        - validity_start
+        - validity_end
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        internal_id:
+          type: string
+        validity_start:
+          type: string
+          format: date-time
+        validity_end:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - draft
+            - sent
+            - accepted
+            - rejected
+    offerDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/offerSummary'
+        - required:
+            - products
+          properties:
+            products:
+              type: array
+              items:
+                $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+
+    affiliation:
+      properties:
+        id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        affiliate_id:
+          type: string
+          format: uuid
+        customer:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+            vat_no:
+              type: string
+            agent:
+              $ref: '../../common/spec/userAttr.yaml'
+        affiliate:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+            vat_no:
+              type: string
+            agent:
+              $ref: '../../common/spec/userAttr.yaml'
+

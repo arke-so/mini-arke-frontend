@@ -1,0 +1,2181 @@
+openapi: 3.0.2
+info:
+  title: Arke Product API
+  version: v1
+servers:
+  - url: /api/v1
+tags:
+  - name: admin
+paths:
+  "/admin/tenant/{tenantId}/_wipe":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminWipeTenant
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      summary: wipes the tenant entirely
+      responses:
+        200:
+          description: wiped completed
+
+  "/analytics/production-needs":
+    get:
+      operationId: showProductionNeeds
+      tags:
+        - analytics
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_viewer
+      responses:
+        200:
+          description: production needs are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/missingProduct'
+
+  "/settings":
+    get:
+      operationId: showSettings
+      tags:
+        - settings
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: settings are shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+    put:
+      operationId: updateSettings
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/settings'
+      responses:
+        200:
+          description: settings are updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+  "/settings/custom-form/{domainObject}":
+    parameters:
+      - name: domainObject
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: showCustomForm
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: custom form is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+    put:
+      operationId: updateCustomForm
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/customForm'
+      responses:
+        200:
+          description: custom form updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+  "/admin/tenant/{tenantId}/search/_index":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminSearchIndex
+      x-echosec:
+        function: is_super_admin
+      summary: reindexes all supply for the given
+      responses:
+        200:
+          description: reindex completed
+  "/product":
+    get:
+      operationId: listProducts
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - products
+              - semi
+              - bundles
+              - producible
+        - name: search_plan
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: in
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: products listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productSummary'
+    put:
+      operationId: createProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productDetails'
+      responses:
+        201:
+          description: product is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productDetails'
+  "/product/_master-types":
+    get:
+      operationId: listMasterTypes
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: master types are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+  "/product/_attributes":
+    get:
+      operationId: listAttributes
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: attributes types are listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/metaAttrs'
+  "/product/_categories":
+    get:
+      operationId: listCategories
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: categories are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+  "/product/_export":
+    get:
+      operationId: exportProducts
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: products successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+  "/product/_extract":
+    post:
+      operationId: extractProduct
+      x-echosec:
+        function: can_access_tenant
+      parameters:
+        - name: Accept
+          in: header
+          schema:
+            type: string
+            enum:
+              - application/json
+              - application/x-yaml
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/upload"
+      responses:
+        200:
+          description: data extracted
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/bomExDocument'
+  "/product/_lookup":
+    parameters:
+      - name: id
+        in: query
+        required: true
+        schema:
+         type: string
+      - name: x-platform-id
+        in: header
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: lookupProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: matching product shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productDetails'
+            
+  "/product/{productId}":
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: products listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productDetails'
+    put:
+      operationId: updateProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productDetails'
+      responses:
+        200:
+          description: products listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productDetails'
+    delete:
+      operationId: archiveProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      responses:
+        200:
+          description: product archived
+
+  "/product/{productId}/supplier":
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listProductSuppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: product suppliers listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productSupplierSummary'
+    put:
+      operationId: createProductSupplier
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productSupplierDetails'
+      responses:
+        200:
+          description: product supplier created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+  "/product/{productId}/supplier/{supplierId}":
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: supplierId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteProductSupplier
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      responses:
+        200:
+          description: product suppliers deleted
+
+    put:
+      operationId: updateProductSupplier
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productSupplierDetails'
+      responses:
+        200:
+          description: product supplier updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+    get:
+      operationId: showProductSupplier
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      responses:
+        200:
+          description: product supplier shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+  "/product/{productId}/supplier/{supplierId}/aggregate":
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: supplierId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listProductSupplierAggregates
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: product supplier aggregates listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productSupplierSummary'
+    put:
+      operationId: createProductSupplierAggregate
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productSupplierDetails'
+      responses:
+        200:
+          description: product supplier aggregate created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+  "/product/{productId}/supplier/{supplierId}/aggregate/{aggregateId}":
+    parameters:
+      - name: productId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: supplierId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: aggregateId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    delete:
+      operationId: deleteProductSupplierAggregate
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      responses:
+        200:
+          description: product supplier aggregate deleted
+
+    put:
+      operationId: updateProductSupplierAggregate
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productSupplierDetails'
+      responses:
+        200:
+          description: product supplier aggregate updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+    get:
+      operationId: showProductSupplierAggregate
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      responses:
+        200:
+          description: product supplier aggregate shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productSupplierDetails'
+
+  "/product/{productId}/inventory":
+    get:
+      operationId: listProductInventoryItemByProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_viewer
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: warehouseId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: orderId
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            default: all
+            enum:
+              - all
+              - available
+      responses:
+        200:
+          description: products listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productInventoryItemSummary'
+  "/product/{productId}/inventory/_adjust":
+    post:
+      operationId: adjustProductInventory
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productInventoryAdjustment'
+      responses:
+        200:
+          description: adjustment performed
+
+  "/production-plan":
+    get:
+      operationId: showProductionPlan
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_viewer
+      responses:
+        200:
+          description: production plan returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPlan'
+    put:
+      operationId: updateProductionPlan
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productionPlan'
+      responses:
+        200:
+          description: production plan is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPlan'
+
+  "/production-plan/_finalize":
+    post:
+      operationId: finalizeProductionPlan
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: production plan is finalized
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPlan'
+
+  "/production-plan/_discard":
+    post:
+      operationId: discardProductionPlan
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: plan discarded
+
+  "/production/_search":
+    post:
+      operationId: searchProduction
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_viewer
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productionSearchRequest'
+      responses:
+        200:
+          description: production search completed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productionItem'
+
+  "/production/_last_two_month_production":
+    get:
+      operationId: lastTwoMonthProduction
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_viewer
+      responses:
+        200:
+          description: last two month production are returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/monthlyProduction'
+
+  "/production/{productionItemId}":
+    get:
+      operationId: showProduction
+      parameters:
+        - name: productionItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_viewer
+      responses:
+        200:
+          description: production shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItem'
+
+    delete:
+      operationId: deleteProduction
+      parameters:
+        - name: productionItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: production deleted
+
+  "/production/{productionItemId}/_start":
+    post:
+      operationId: startProduction
+      parameters:
+        - name: productionItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: production started
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItem'
+
+  "/production/{productionItemId}/_complete":
+    post:
+      operationId: completeProduction
+      parameters:
+        - name: productionItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: production completed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItem'
+
+  "/production/{productionItemId}/_update":
+    post:
+      operationId: updateProduction
+      parameters:
+        - name: productionItemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productionUpdateRequest'
+      responses:
+        200:
+          description: production updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItem'
+
+  "/inventory/product":
+    get:
+      operationId: listProductInventoryItems
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_viewer
+      responses:
+        200:
+          description: inventory listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productInventoryItemSummary'
+  "/inventory/product/event":
+    get:
+      operationId: listProductInventoryEvents
+      summary: lists the inventory events
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_viewer
+      responses:
+        200:
+          description: events listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productInventoryEventSummary'
+
+  "/inventory/product/{productInventoryItemId}":
+    parameters:
+      - name: productInventoryItemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showProductInventoryItem
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_viewer
+      responses:
+        200:
+          description: inventory returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productInventoryItemDetails'
+  "/inventory/product/{productInventoryItemId}/_transfer":
+    parameters:
+      - name: productInventoryItemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: number
+          format: float
+    post:
+      operationId: transferProductInventoryItem
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_inventory_editor
+      responses:
+        200:
+          description: transfer started
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productInventoryItemDetails'
+  "/production-phase":
+    get:
+      operationId: listProductionPhases
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: production phases are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productionPhaseSummary'
+    put:
+      operationId: createProductionPhase
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productionPhaseDetails'
+      responses:
+        201:
+          description: production phase is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPhaseDetails'
+  "/production-phase/{phaseId}":
+    parameters:
+      - name: phaseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showProductionPhase
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: production phase shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPhaseDetails'
+    put:
+      operationId: updateProductionPhase
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productionPhaseDetails'
+      responses:
+        200:
+          description: production phase updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionPhaseDetails'
+  
+  "/production-phase/{phaseId}/item-phase":
+    parameters:
+        - name: phaseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+    get:
+      operationId: listItemPhases
+      tags:
+        - production-item-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: production item phases are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productionItemPhaseSummary'
+  "/production-item-phase/{itemPhaseId}":
+    parameters:
+      - name: itemPhaseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showProductionItemPhase
+      tags:
+        - production-item-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: production item phase shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItemPhaseDetails'
+
+  "/production-item-phase/{itemPhaseId}/_start":
+    parameters:
+      - name: itemPhaseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: startProductionPhase
+      tags:
+        - production-item-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      responses:
+        200:
+          description: production item phase started
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItemPhaseDetails'
+
+  "/production-item-phase/{itemPhaseId}/_complete":
+    parameters:
+      - name: itemPhaseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: completeProductionPhase
+      tags:
+        - production-item-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - production_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/itemPhaseCompletionRequest'
+      responses:
+        200:
+          description: production item phase completed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItemPhaseDetails'
+  "/production-item-phase/{itemPhaseId}/notes":
+    parameters:
+      - name: itemPhaseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listProductionItemPhaseNotes
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_viewer
+      responses:
+        200:
+          description: production item phase notes are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/productionItemPhaseNote'
+    post:
+      operationId: createProductionItemPhaseNote
+      tags:
+        - production-phase
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+                - text
+              properties:
+                text:
+                  type: string
+      responses:
+        201:
+          description: production item phase note is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/productionItemPhaseNote'
+
+components:
+  schemas:
+    phaseAttr:
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          minLength: 0
+    templatesAttr:
+      required:
+        - product_id_template
+        - product_id_counter_template
+      properties:
+        product_id_template:
+          type: string
+        product_id_counter_template:
+          type: string
+    settings:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - templates
+          properties:
+            templates:
+              $ref: '#/components/schemas/templatesAttr'
+            phases:
+              type: array
+              items:
+                $ref: '#/components/schemas/phaseAttr'
+    metaAttrs:
+      x-go-type: attrs.MetaAttrs
+      type: object
+      additionalProperties:
+        type: object
+        additionalProperties:
+          type: object
+          required:
+            - type
+            - seen
+            - uom
+          properties:
+            type:
+              type: string
+            seen:
+              type: array
+              items: { }
+    productSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - name
+        - categories
+        - prices
+        - uom
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        master_type:
+          type: string
+        type:
+          type: string
+          enum:
+            - producible
+            - purchasable
+            - bundle
+        name:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        uom:
+          type: string
+        semi_id:
+          type: string
+          format: uuid
+        prices:
+          $ref: '../../common/spec/pricesAttr.yaml'
+        created:
+          $ref: '../../common/spec/dateAttr.yaml'
+    missingProduct:
+      allOf:
+        - $ref: '#/components/schemas/productSummary'
+        - type: object
+          required:
+            - inventory
+          properties:
+            inventory:
+              $ref: '#/components/schemas/missingProductBuckets'
+            orders:
+              type: array
+              items:
+                $ref: '../../common/spec/orderMetaAttr.yaml'
+
+    productDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/productSummary'
+        - required:
+            - description
+            - attributes
+          properties:
+            description:
+              type: string
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            attributes:
+              type: object
+              additionalProperties: true
+            process_lines:
+              type: array
+              items:
+                $ref: '#/components/schemas/processLine'
+            bundled_products:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            plan:
+              type: array
+              items:
+                $ref: '#/components/schemas/planPhase'
+            track_supplier_warehouses:
+              type: boolean
+              default: false
+    planPhase:
+      required:
+        - operator
+        - processes
+      properties:
+        operator:
+          type: string
+          enum:
+            - and
+            - or
+            - xor
+        processes:
+          type: array
+          items:
+            $ref: '#/components/schemas/planProcess'
+    planRequirements:
+      properties:
+        raw_materials:
+          type: array
+          items:
+            $ref: '../../common/spec/quantifiedItem.yaml'
+    planProcess:
+      required:
+        - properties
+      properties:
+        properties:
+          allOf:
+            - $ref: '#/components/schemas/phaseAttr'
+            - required:
+                - duration
+              properties:
+                duration:
+                  type: integer
+                  description: duration in minutes
+        custom_form_values:
+          $ref: '../../common/spec/customFormValues.yaml'
+        requirements:
+          $ref: '#/components/schemas/planRequirements'
+    processLine:
+      required:
+        - name
+        - description
+        - station
+        - duration
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          minLength: 0
+        station:
+          type: string
+          minLength: 0
+        duration:
+          type: string
+          minLength: 0
+    productBuckets:
+      x-go-type: attrs.ProductBucketsAttr
+      required:
+        - planned
+        - in_production
+        - available
+        - reserved
+        - shipped
+      properties:
+        planned:
+          type: number
+          format: float
+        in_production:
+          type: number
+          format: float
+        available:
+          type: number
+          format: float
+        reserved:
+          type: number
+          format: float
+        shipped:
+          type: number
+          format: float
+    missingProductBuckets:
+      required:
+        - planned
+        - in_production
+        - available
+        - reserved
+        - shipped
+        - needed
+        - missing
+      properties:
+        planned:
+          type: number
+          format: float
+        in_production:
+          type: number
+          format: float
+        available:
+          type: number
+          format: float
+        reserved:
+          type: number
+          format: float
+        shipped:
+          type: number
+          format: float
+        needed:
+          type: number
+          format: float
+        missing:
+          type: number
+          format: float
+
+    productInventoryItemSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - product_id
+        - name
+        - internal_id
+        - categories
+        - uom
+      properties:
+        id:
+          type: string
+        product_id:
+          type: string
+        name:
+          type: string
+        internal_id:
+          type: string
+        order_id:
+          type: string
+          format: uuid
+        order_external_id:
+          type: string
+        order_internal_id:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        semi_id:
+          type: string
+          format: uuid
+        lot:
+          type: string
+        uom:
+          type: string
+        buckets:
+          $ref: '#/components/schemas/productBuckets'
+        created:
+          $ref: '../../common/spec/dateAttr.yaml'
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+
+    productInventoryItemDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/productInventoryItemSummary'
+        - properties:
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+
+    productionPlanProduct:
+      required:
+        - id
+        - internal_id
+        - quantity
+        - uom
+        - categories
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '../../common/spec/orderMetaAttr.yaml'
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+          minLength: 0
+        semi_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          format: float
+        name:
+          type: string
+        priority:
+          type: integer
+        uom:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+
+    productionPlanConfiguration:
+      required:
+        - starting_date
+        - monthly_availability
+        - scheduler_settings
+      properties:
+        starting_date:
+          type: string
+          format: date
+        monthly_availability:
+          type: integer
+        monthly_availabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/productionPlanMonthlyAvailability'
+        scheduler_settings:
+          $ref: '#/components/schemas/productionPlanSchedulerSettings'
+
+    productionPlanSchedulerSettings:
+      required:
+        - priority_penalty
+        - order_penalty
+        - product_penalty
+      properties:
+        priority_penalty:
+          type: integer
+          minimum: 0
+          maximum: 5
+        order_penalty:
+          type: integer
+          minimum: 0
+          maximum: 5
+        product_penalty:
+          type: integer
+          minimum: 0
+          maximum: 5
+
+    productionPlanMonthlyAvailability:
+      required:
+        - month
+        - year
+        - availability
+      properties:
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+          minimum: 2020
+          maximum: 2050
+        availability:
+          type: integer
+
+    productionSearchRequest:
+      properties:
+        statuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/productionSearchStatus"
+
+    productionSearchStatus:
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - planned
+            - in_progress
+            - completed
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+
+    productionUpdateRequest:
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: number
+          format: float
+    
+    itemPhaseCompletionRequest:
+      required:
+        - raw_material_inventory
+      properties:
+        completed:
+          type: number
+          minimum: 0
+        raw_material_inventory:
+          type: array
+          items:
+            $ref: '#/components/schemas/rawMaterialInventoryItem'
+
+    productionPlan:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+          - products
+          properties:
+            products:
+              type: array
+              items:
+                $ref: "#/components/schemas/productionPlanProduct"
+            configuration:
+              $ref: '#/components/schemas/productionPlanConfiguration'
+            production_items:
+              type: array
+              items:
+                $ref: '#/components/schemas/productionItem'
+
+    productionItem:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - id
+            - product_id
+            - product_internal_id
+            - product_categories
+            - product_name
+            - plan
+            - starts_at
+            - ends_at
+            - quantity
+            - uom
+            - duration
+            - status
+            - logs
+          properties:
+            id:
+              type: string
+              format: uuid
+            product_id:
+              type: string
+              format: uuid
+            product_internal_id:
+              type: string
+            product_categories:
+              type: array
+              items:
+                type: string
+            product_semi_id:
+              type: string
+              format: uuid
+            product_name:
+              type: string
+            plan:
+              type: array
+              items:
+                $ref: '#/components/schemas/planPhase'
+            starts_at:
+              type: string
+              format: date-time
+            ends_at:
+              type: string
+              format: date-time
+            started_at:
+              type: string
+              format: date-time
+            ended_at:
+              type: string
+              format: date-time
+            quantity:
+              type: number
+              format: float
+            uom:
+              type: string
+            duration:
+              type: number
+              format: float
+            lot:
+              type: string
+            orders:
+              type: array
+              items:
+                type: string
+                format: uuid
+            status:
+              type: string
+              enum:
+                - planned
+                - in_progress
+                - completed
+            logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/productionItemLog'
+            phases:
+              type: array
+              items:
+                $ref: '#/components/schemas/productionItemPhaseSummaryBase'
+
+    productionItemLog:
+      required:
+        - id
+        - event
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event:
+          type: string
+          enum:
+            - started
+            - completed
+            - updated
+        created_at:
+          type: string
+          format: date-time
+        quantity:
+          type: number
+          format: float
+   
+    productionItemPhaseLog:
+      required:
+        - id
+        - event
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event:
+          type: string
+          enum:
+            - started
+            - completed
+        created_at:
+          type: string
+          format: date-time
+
+    productInventoryEventSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - time
+        - from_bucket
+        - to_bucket
+        - product_id
+        - product_internal_id
+        - product_name
+        - refs
+        - quantity
+      properties:
+        id:
+          type: string
+          format: uuid
+        time:
+          type: string
+          format: date-time
+        product_id:
+          type: string
+          format: uuid
+        product_internal_id:
+          type: string
+        product_name:
+          type: string
+        quantity:
+          type: number
+          format: float
+        from_bucket:
+          type: string
+          enum:
+            - planned
+            - in_production
+            - ""
+        to_bucket:
+          type: string
+          enum:
+            - planned
+            - in_production
+            - available
+            - reserved
+            - shipped
+            - ""
+        refs:
+          type: array
+          minLength: 0
+          items:
+            $ref: '../../common/spec/genericAttr.yaml'
+        reason_description:
+          type: string
+        reason_type:
+          type: string
+        inventory_item:
+          type: object
+          properties:
+            warehouse_attr:
+              $ref: '../../common/spec/warehouseAttr.yaml'
+            warehouse_id:
+              type: string
+              format: uuid
+    productInventoryEventDetails:
+      allOf:
+        - $ref: '#/components/schemas/productInventoryEventSummary'
+        - required:
+            - product_inventory_item_id
+            - reason_type
+          properties:
+            product_inventory_item_id:
+              type: string
+              format: uuid
+            reason_type:
+              type: string
+            operator:
+              $ref: '../../common/spec/userAttr.yaml'
+    "productInventoryAdjustment":
+      required:
+        - bucket
+        - quantity
+        - reason
+        - warehouse_attr
+        - warehouse_id
+      properties:
+        item_id:
+          type: string
+          format: uuid
+        bucket:
+          type: string
+        quantity:
+          type: number
+          format: float
+        reason:
+          type: string
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+    "customForm":
+      required:
+        - definitions
+      properties:
+        generation:
+          type: integer
+        definitions:
+          type: array
+          items:
+            $ref: '../../common/spec/customFieldDefinitionAttr.yaml'
+    upload:
+      required:
+        - file
+        - name
+      properties:
+        file:
+          type: string
+        name:
+          type: string
+        document_type_hint:
+          type: string
+
+    bomExDocument:
+      allOf:
+        - $ref: '../../common/spec/exSchemaBase.yaml'
+        - required:
+            - spec
+          properties:
+            spec:
+              $ref: '#/components/schemas/bomExSpec'
+    bomExSpec:
+      type: object
+      required:
+        - name
+        - attr_color
+        - raw_materials
+      properties:
+        name:
+          type: string
+        external_id:
+          x-oapi-codegen-extra-tags:
+            yaml: 'externalId'
+          type: string
+        attr_color:
+          x-oapi-codegen-extra-tags:
+            yaml: 'attrColor'
+          type: object
+          properties:
+            code:
+              type: string
+            label:
+              type: string
+        raw_materials:
+          x-oapi-codegen-extra-tags:
+            yaml: 'rawMaterials'
+          type: array
+          items:
+            $ref: '#/components/schemas/extractedRawMaterial'
+    extractedRawMaterial:
+      required:
+        - name
+        - quantity
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        uom:
+          type: string
+        attr_color:
+          x-oapi-codegen-extra-tags:
+            yaml: 'attrColor'
+          type: object
+          properties:
+            code:
+              type: string
+            label:
+              type: string
+        attr_size:
+          x-oapi-codegen-extra-tags:
+            yaml: 'attrSize'
+          type: integer
+
+    productSupplierDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/productSupplierSummary'
+        - required:
+            - minimum_quantity
+          properties:
+            minimum_quantity:
+              type: number
+              format: float
+            attributes:
+              type: object
+              additionalProperties: true
+            lead_time:
+              type: string
+            aggregate_of_id:
+              type: string
+              format: uuid
+            aggregate_quantity:
+              type: number
+              format: float
+
+    productSupplierSummary:
+      required:
+        - supplier_id
+        - external_id
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        uom:
+          type: string
+          default: unit
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        aggregate_of_id:
+          type: string
+          format: uuid
+        aggregate_quantity:
+          type: number
+          format: float
+        created:
+          $ref: '../../common/spec/dateAttr.yaml'
+        prices:
+          $ref: '../../common/spec/pricesAttr.yaml'
+    productionItemPhaseNote:
+      properties:
+        id:
+          type: string
+          format: uuid
+        text:
+          type: string
+        created:
+          $ref: '../../common/spec/dateAttr.yaml'
+    productionPhaseSummary:
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+    productionPhaseDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/productionPhaseSummary'
+    
+    productionItemPhaseSummaryBase:
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - not_ready
+            - ready
+            - started
+            - completed
+        step:
+          type: number
+        percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/productionItemPhaseLog'
+        phase:
+          $ref: '#/components/schemas/productionPhaseSummary'
+    monthlyProduction:
+      type: object
+      required:
+        - month
+        - lot_count
+      properties:
+        month:
+          type: string
+        lot_count:
+          type: integer
+
+    productionItemPhaseSummary:
+      allOf:
+        - $ref: '#/components/schemas/productionItemPhaseSummaryBase'
+        - type: object
+          required:
+            - production_item                       
+          properties:
+            production_item:
+              $ref: '#/components/schemas/productionItem'
+
+    productionItemPhaseDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/productionItemPhaseSummary'
+        - required:
+            - is_final
+            - raw_materials
+            - raw_material_inventory
+          properties:
+            is_final:
+              type: boolean
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            raw_material_inventory:
+              type: array
+              items:
+                $ref: '#/components/schemas/rawMaterialInventoryItem'
+    rawMaterialInventoryItem:
+      required:
+        - id
+        - uom
+        - buckets
+      properties:
+        id:
+          type: string
+          format: uuid
+        uom:
+          type: string
+        buckets:
+          $ref: '#/components/schemas/phaseRawMaterialBuckets'         
+    phaseRawMaterialBuckets:
+      required:
+        - needed
+        - consumed
+        - reserved
+        - scrapped
+      properties:
+        needed:
+          type: number
+          minimum: 0
+        consumed:
+          type: number
+          minimum: 0
+        reserved:
+          type: number
+          minimum: 0
+        scrapped:
+          type: number
+          minimum: 0

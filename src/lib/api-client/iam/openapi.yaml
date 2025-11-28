@@ -1,0 +1,1064 @@
+openapi: 3.0.2
+info:
+  title: Arke IAM API
+  version: v1
+servers:
+  - url: /api/v1
+
+tags:
+  - name: admin
+  - name: tenant
+  - name: users
+  - name: auth
+  - name: global
+  - name: internal
+  - name: settings
+  - name: notifications
+  - name: api-keys
+
+paths:
+  "/role":
+    get:
+      operationId: listRoles
+      tags:
+        - global
+      x-echosec:
+        function: is_anonymous
+      responses:
+        200:
+          description: roles listed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+  "/admin/tenant":
+    get:
+      operationId: adminListTenants
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      responses:
+        200:
+          description: returns all tenants
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/tenantsList'
+    put:
+      operationId: adminCreateTenant
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/tenantDetails'
+      responses:
+        200:
+          description: tenant created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/tenantDetails'
+  "/admin/tenant/{tenantId}/_init":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminInitTenant
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      summary: initializes the tenant
+      responses:
+        200:
+          description: tenant initialized
+  "/system/settings":
+    get:
+      operationId: listSettings
+      x-echosec:
+        function: is_super_admin
+      tags:
+        - settings
+      responses:
+        200:
+          description: settings listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/settingsDetails'
+    put:
+      operationId: createSettings
+      x-echosec:
+        function: is_super_admin
+      tags:
+        - settings
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/settingsDetails'
+
+      responses:
+        200:
+          description: settings created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settingsDetails'
+
+  "/system/settings/{key}":
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^\w+$'
+      - name: x-api-key
+        in: header
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: showSettings
+      tags:
+        - settings
+      x-echosec:
+        function: is_anonymous
+      responses:
+        200:
+          description: settings is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settingsDetails'
+
+  "/system/settings/{key}/_update-value":
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^\w+$'
+    post:
+      operationId: updateSettingsValue
+      x-echosec:
+        function: is_super_admin
+      tags:
+        - settings
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/settingsUpdate'
+
+      responses:
+        200:
+          description: settings updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settingsDetails'
+
+  "/internal/tenant/_find":
+    get:
+      parameters:
+        - name: vat
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+      operationId: findTenant
+      x-echosec:
+        function: is_anonymous
+      tags:
+        - internal
+      responses:
+        200:
+          description: tenant found
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/tenantDetails'
+  "/internal/tenant/_fiscal-list":
+    get:
+      parameters:
+        - name: x-api-key
+          in: header
+          required: true
+          schema:
+            type: string
+      operationId: fiscalList
+      x-echosec:
+        function: is_anonymous
+      tags:
+        - internal
+      responses:
+        200:
+          description: fiscal list returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/fiscalTenantDetails'
+
+  "/tenant":
+    get:
+      operationId: showTenant
+      tags:
+        - tenant
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: show tenant
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/tenantDetails'
+    put:
+      operationId: updateTenant
+      tags:
+        - tenant
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/tenantDetails'
+      responses:
+        200:
+          description: tenant updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/tenantDetails'
+  "/tenant/arkets":
+    get:
+      operationId: showArkets
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: arkets are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '../../common/spec/arketAttr.yaml'
+    put:
+      operationId: updateArkets
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: array
+              items:
+                $ref: '../../common/spec/arketAttr.yaml'
+      responses:
+        200:
+          description: arkets are updated
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '../../common/spec/arketAttr.yaml'
+  "/tenant/doc-notes":
+    get:
+      operationId: showNotes
+      tags:
+        - tenant
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: notes are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/docNote'
+    put:
+      operationId: updateNotes
+      tags:
+        - tenant
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/docNote'
+      responses:
+        200:
+          description: notes are updated
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/docNote'
+  "/warehouse":
+    get:
+      operationId: listWarehouses
+      tags:
+        - warehouses
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: warehouses listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/warehouseList'
+    put:
+      operationId: createWarehouse
+      tags:
+        - warehouses
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/warehouseSummary'
+      responses:
+        200:
+          description: warehouse created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/warehouseSummary'
+  "/warehouse/_production_facility":
+    get:
+      operationId: showProductionFacility
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - warehouses
+      responses:
+        200:
+          description: production facility shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/warehouseSummary'
+
+  "/supplier/{supplierId}/warehouse":
+    parameters:
+      - name: supplierId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showSupplierWarehouse
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - warehouses
+      responses:
+        200:
+          description: supplier warehouse shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/warehouseSummary'
+
+  "/warehouse/{warehouseId}":
+    parameters:
+      - name: warehouseId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      operationId: updateWarehouse
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - warehouses
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/warehouseSummary'
+      responses:
+        200:
+          description: warehouse updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/warehouseSummary'
+
+  "/user":
+    get:
+      operationId: listUsers
+      parameters:
+        - name: role
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - users
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: users listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/usersList'
+    put:
+      operationId: createUser
+      tags:
+        - users
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/userCreate'
+      responses:
+        200:
+          description: user created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/userDetails'
+
+  "/user/{userId}":
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showUser
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - users
+      responses:
+        200:
+          description: users listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/userDetails'
+    put:
+      operationId: updateUser
+      x-echosec:
+        function: can_admin_tenant
+      tags:
+        - users
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/userDetails'
+      responses:
+        200:
+          description: user updated
+    delete:
+      operationId: disableUser
+      x-echosec:
+        function_ can_admin_tenant
+      tags:
+        - users
+      responses:
+        200:
+          description: user disabled
+  "/user/{userId}/_update-password":
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: updatePassword
+      x-echosec:
+        function: can_admin_tenant
+      tags:
+        - users
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+      responses:
+        200:
+          description: password changed
+
+  "/api-key":
+    get:
+      operationId: listApiKeys
+      tags:
+        - api-keys
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: api keys listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/apiKeyDetails'
+    put:
+      operationId: createApiKey
+      x-echosec:
+        function: can_admin_tenant
+      tags:
+        - api-keys
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              required:
+                - name
+                - userId
+              properties:
+                name:
+                  type: string
+                userId:
+                  type: string
+                  format: uuid
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        200:
+          description: api key created
+          content:
+              "application/json":
+                schema:
+                  $ref: '#/components/schemas/apiKeyDetails'
+  "/api-key/{apiKeyId}":
+    parameters:
+      - name: apiKeyId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showApiKey
+      tags:
+        - api-keys
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: api key is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/apiKeyDetails'
+    put:
+      operationId: updateApiKey
+      x-echosec:
+        function: can_admin_tenant
+      tags:
+        - api-keys
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/apiKeyDetails'
+      responses:
+        200:
+          description: api key updated
+          content:
+              "application/json":
+                schema:
+                  $ref: '#/components/schemas/apiKeyDetails'
+    delete:
+      operationId: deleteApiKey
+      x-echosec:
+        function: can_admin_tenant
+      tags:
+        - api-keys
+      responses:
+        200:
+          description: api key deleted
+  
+  "/api-key/_validate":
+    post:
+      x-echosec:
+        function: is_anonymous
+      tags:
+        - api-keys
+      operationId: validateApiKey
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              required:
+                - api_key
+              properties:
+                api_key:
+                  type: string
+      responses:
+        200:
+          description: api key is validated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/access_token'
+        401:
+          description: api key is invalid
+
+  "/login":
+    post:
+      description: url bound login
+      x-echosec:
+        function: is_anonymous
+      tags:
+        - auth
+      operationId: login
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/login'
+      responses:
+        200:
+          description: successful login
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/access_token'
+
+  "/auth/token":
+    post:
+      description: request a new token
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - auth
+      operationId: requestAccessToken
+      responses:
+        200:
+          description: token issued
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/access_token'
+
+  "/notification":
+    get:
+      description: notifications for a user or role
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - notifications
+      operationId: listNotifications
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: from
+          in: query
+          required: false
+          description: fetches the notifications that are created after the given UNIX timestamp
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: notifications listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/notificationsList'
+
+  "/notification/{notificationId}/_acknowledge":
+    post:
+      description: marks a notification as acknowledged
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - notifications
+      operationId: acknowledgeNotification
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          description: ID of the notification to acknowledge
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Notification acknowledged successfully
+
+components:
+  schemas:
+    login:
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    access_token:
+      required:
+        - access_token
+      properties:
+        access_token:
+          type: string
+    userSummary:
+      required:
+        - username
+        - full_name
+        - roles
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        full_name:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    userDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/userSummary'
+        - properties:
+            email:
+              type: string
+
+    settingsDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - key
+            - value
+          properties:
+            key:
+              type: string
+              pattern: '^\w+$'
+            value:
+              x-go-type: json.RawMessage
+
+    settingsUpdate:
+      required:
+        - value
+      properties:
+        value:
+          x-go-type: json.RawMessage
+
+    userCreate:
+      allOf:
+        - $ref: '#/components/schemas/userDetails'
+        - required:
+            - password
+          properties:
+            password:
+              type: string
+
+    warehouseList:
+      type: array
+      items:
+        $ref: '#/components/schemas/warehouseSummary'
+
+    warehouseSummary:
+      required:
+        - name
+        - type
+        - address
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          $ref: '../../common/spec/addressAttr.yaml'
+        type:
+          type: string
+          enum:
+            - production_facility
+            - distribution_center
+            - stock_at_subcontractor
+        active:
+          type: boolean
+          default: true
+        supplier_id:
+          type: string
+          format: uuid
+
+    usersList:
+      type: array
+      items:
+        $ref: '#/components/schemas/userSummary'
+    tenantSettings:
+      required:
+        - uom
+        - addresses
+        - emails
+        - vat
+      properties:
+        uom:
+          type: array
+          items:
+            type: string
+        addresses:
+          type: array
+          items:
+            $ref: '../../common/spec/addressAttr.yaml'
+        emails:
+          type: array
+          items:
+            $ref: '../../common/spec/emailAttr.yaml'
+        phones:
+          type: array
+          items:
+            $ref: '../../common/spec/phoneAttr.yaml'
+        website:
+          type: string
+        registered_capital:
+          type: string
+        rea:
+          type: string
+        trade_register:
+          type: string
+        sdi:
+          type: string
+        pec:
+          type: string
+        vat:
+          type: string
+        preferred_payment_method:
+          type: string
+        is_manufacturer:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        is_reseller:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        is_direct_to_consumer:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_sales_agents:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_ecommerce_sales:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_document_sales_quote:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_document_sales_offer:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_document_sales_order:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_document_purchase_quote:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_document_purchase_order:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_semi:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+        has_bundle:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+          default: false
+        monthly_availability:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: integer
+          description: monthly availability in hours
+        track_supplier_warehouses:
+          x-go-type-skip-optional-pointer: true
+          x-omitempty: false
+          type: boolean
+          description: track third-party warehouse
+
+    cassettoFiscale:
+      required:
+        - cf
+        - piva
+        - pin
+        - password
+      properties:
+        cf:
+          type: string
+        piva:
+          type: string
+        pin:
+          type: string
+        password:
+          type: string
+    tenantDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/tenantSummary'
+        - properties:
+            settings:
+              $ref: '#/components/schemas/tenantSettings'
+            has_cassetto_fiscale:
+              type: boolean
+            cassetto_fiscale:
+              $ref: '#/components/schemas/cassettoFiscale'
+
+    tenantSummary:
+      required:
+        - name
+        - vanity
+        - enabled
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        vanity:
+          type: string
+        enabled:
+          type: boolean
+    tenantsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/tenantSummary'
+    fiscalTenantDetails:
+      properties:
+        id:
+          type: string
+          format: uuid
+        cassetto_fiscale:
+          $ref: '#/components/schemas/cassettoFiscale'
+
+    notificationsList:
+      type: array
+      items:
+        $ref: '#/components/schemas/notificationSummary'
+
+    notificationSummary:
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        category:
+          type: string
+        created_ts:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+        acknowledged:
+          $ref: '../../common/spec/dateAttr.yaml'
+    
+    apiKeyDetails:
+      required:
+        - id
+        - user_id
+        - name
+        - key
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        key:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    docNote:
+      type: object
+      required:
+        - doc_id
+        - note_type
+        - note
+      properties:
+        doc_id:
+          type: string
+        note_type:
+          type: string
+        note:
+          type: string

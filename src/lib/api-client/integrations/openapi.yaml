@@ -1,0 +1,360 @@
+openapi: 3.0.2
+info:
+  title: Arke Integrations API
+  version: v1
+servers:
+  - url: /api/v1
+
+tags:
+  - name: integrations
+  - name: internal
+  - name: admin
+paths:
+  "/webhook":
+    get:
+      operationId: listWebhooks
+      summary: lists the webhooks
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - webhooks
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhooks are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/webhookDetails'
+    put:
+      operationId: createWebhook
+      summary: creates a webhook
+      tags:
+        - webhooks
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/webhookDetails'
+      responses:
+        200:
+          description: webhook created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/webhookDetails'
+  "/webhook/{webhookId}":
+    parameters:
+      - name: webhookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showWebhook
+      tags:
+        - webhooks
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhook is shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/webhookDetails'
+    put:
+      operationId: updateWebhook
+      tags:
+        - webhooks
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/webhookDetails'
+      responses:
+        200:
+          description: webhook is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/webhookDetails'
+    delete:
+      operationId: deleteWebhook
+      tags:
+        - webhooks
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhook is deleted
+
+  "/order":
+    put:
+      operationId: createOrder
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - sales_order_editor
+      parameters:
+        - name: x-platform-id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/orderSimple'
+      responses:
+        201:
+          description: order created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/apiResponse'
+
+  "/customer":              
+    put:
+        operationId: upsertCustomer
+        x-echosec:
+          function: can_access_tenant
+          params:
+            - customer_editor
+        parameters:
+        - name: x-platform-id
+          in: header
+          required: true
+          schema:
+            type: string
+        requestBody:
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customerSimple'
+        responses:
+          200:
+            description: customer created
+            content:
+              "application/json":
+                schema:
+                  $ref: '#/components/schemas/apiResponse'
+
+  "/product":
+    put:
+      operationId: upsertProduct
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - product_editor
+      parameters:
+        - name: x-platform-id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/productSimple'
+      responses:
+        200:
+          description: product is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/apiResponse'
+      
+components:
+  schemas:
+    webhookDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the webhook
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+          format: uri
+          description: URL to which the webhook payload is sent
+        eventCategory:
+          type: string
+          description: Category of event that triggers the webhook
+        eventType:
+          type: string
+          description: Type of event that triggers the webhook
+          nullable: true
+        status:
+          type: string
+          enum: [active, inactive]
+          description: Current status of the webhook
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+          description: Custom headers to be sent with the webhook request
+      required:
+        - name
+        - endpoint
+        - eventCategory
+
+    apiResponse:
+      required:
+        - status
+      properties:
+        arke_id:
+          type: string
+          format: uuid
+        attributes:
+          type: object
+        error:
+          type: string
+        status:
+          type: string
+          enum:
+            - ok
+            - queued
+            - error
+        resource_type:
+          type: string
+
+    orderSimple:
+      required:
+        - id
+        - currency
+        - shipping_address
+        - total
+        - products
+        - customer
+      properties:
+        id: 
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        contact_email:
+          type: string
+        currency:
+          type: string
+          enum:
+            - EUR
+            - USD
+            - GBP
+        email:
+          type: string
+        order_number:
+          type: number
+        shipping_address:
+          properties:
+            address:
+              type: string
+            country_code:
+              type: string
+          required:
+            - address
+            - country_code
+        billing_address:
+          properties:
+            address:
+              type: string
+            country_code:
+              type: string
+          required:
+            - address
+            - country_code
+        total:
+          type: number
+          format: float
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/productWithQuantity'
+        customer:
+          $ref: '#/components/schemas/customerSimple'
+        sales_channel_id:
+          type: string
+          format: uuid
+
+    productWithQuantity:
+      allOf:
+        - $ref: '#/components/schemas/productSimple'
+        - required:
+          - quantity
+          properties:
+            quantity:
+              type: number
+    
+    productSimple:
+      required:
+        - id
+        - name
+        - price
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+    customerSimple:
+      required:
+        - id
+        - name
+        - address
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        address:
+          properties:
+            address:
+              type: string
+            country_code:
+              type: string
+          required:
+            - address
+            - country_code
+        email:
+          type: string
+        phone:
+          type: string

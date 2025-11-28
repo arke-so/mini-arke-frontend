@@ -1,0 +1,239 @@
+openapi: 3.0.2
+info:
+  title: Arke Freeform API
+  version: v1
+servers:
+  - url: /api/v1
+paths:
+  "/-/definition":
+    get:
+      operationId: listDefinitions
+      summary: list definitions
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: generation
+          in: query
+          required: false
+          schema:
+            type: integer
+      tags:
+        - definitions
+      x-echosec:
+        function: is_super_admin
+      responses:
+        200:
+          description: definition listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/definitionDetails'
+    put:
+      operationId: createDefinition
+      summary: create definition
+      tags:
+        - definitions
+      x-echosec:
+        function: is_super_admin
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/definitionDetails'
+      responses:
+        200:
+          description: data updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/definitionDetails'
+  "/-/_cleanup":
+    post:
+      operationId: cleanup
+      summary: cleans up all the expired data
+      x-echosec:
+        function: is_anonymous
+      responses:
+        200:
+          description: data is cleaned up
+  "/data/{type}":
+    parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listData
+      summary: list data
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: ref_type
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: ref_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - data
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: data listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/dataDetails'
+    put:
+      operationId: createData
+      summary: create data
+      tags:
+        - data
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/dataDetails'
+      responses:
+        200:
+          description: data is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/dataDetails'
+  "/data/{type}/{dataId}":
+    parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: dataId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showData
+      summary: show data
+      tags:
+        - data
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: data displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/dataDetails'
+    put:
+      operationId: updateData
+      summary: update data
+      tags:
+        - data
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/dataDetails'
+      responses:
+        200:
+          description: data updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/dataDetails'
+    delete:
+      operationId: deleteData
+      summary: delete data
+      tags:
+        - data
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: data is soft deleted
+
+components:
+  schemas:
+    definitionDetails:
+      allOf:
+        - required:
+            - schema
+            - type
+            - generation
+            - ttl
+        - properties:
+            type:
+              type: string
+            generation:
+              type: integer
+            schema:
+              type: object
+              x-go-type: json.RawMessage
+            ttl:
+              type: integer
+              minimum: 1
+            created:
+              $ref: '../../common/spec/dateAttr.yaml'
+            updated:
+              $ref: '../../common/spec/dateAttr.yaml'
+    dataDetails:
+      allOf:
+        - required:
+            - content
+        - properties:
+            id:
+              type: string
+              format: uuid
+            type:
+              type: string
+            ref_id:
+              type: string
+              format: uuid
+            ref_type:
+              type: string
+            content:
+              type: object
+              x-go-type: json.RawMessage
+            generation:
+              type: integer
+            created:
+              $ref: '../../common/spec/dateAttr.yaml'
+            updated:
+              $ref: '../../common/spec/dateAttr.yaml'
+            expires_at:
+              type: string
+              format: date-time
+
+

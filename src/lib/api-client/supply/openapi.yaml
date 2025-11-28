@@ -1,0 +1,2854 @@
+openapi: 3.0.2
+info:
+  title: Arke Supply API
+  version: v1
+servers:
+  - url: /api/v1
+
+tags:
+  - name: settings
+  - name: suppliers
+  - name: raw materials
+  - name: inventory
+  - name: orders
+  - name: transport documents
+  - name: purchase invoices
+  - name: internal
+  - name: admin
+  - name: analytics
+paths:
+  "/admin/tenant/{tenantId}/search/_index":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminSearchIndex
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      summary: reindexes all supply for the given
+      responses:
+        200:
+          description: reindex completed
+  "/admin/tenant/{tenantId}/_wipe":
+    post:
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: adminWipeTenant
+      tags:
+        - admin
+      x-echosec:
+        function: is_super_admin
+      summary: wipes the tenant entirely
+      responses:
+        200:
+          description: wiped completed
+  "/settings":
+    get:
+      operationId: showSettings
+      summary: shows the Supply-specific settings for the current tenant
+      tags:
+        - settings
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: settings are shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+    put:
+      operationId: updateSettings
+      summary: updates the Supply-specific settings for the current tenant
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/settings'
+      responses:
+        200:
+          description: settings are updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/settings'
+  "/settings/webhook":
+    get:
+      operationId: listWebHooks
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhooks are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '../../common/spec/webhook.yaml'
+    put:
+      operationId: createWebhook
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '../../common/spec/webhook.yaml'
+      responses:
+        200:
+          description: webhook created
+          content:
+            "application/json":
+              schema:
+                $ref: '../../common/spec/webhook.yaml'
+  "/settings/webhook/{webHookId}":
+    parameters:
+      - name: webHookId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showWebHook
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhook is shown
+          content:
+            "application/json":
+              schema:
+                $ref: '../../common/spec/webhook.yaml'
+    put:
+      operationId: updateWebHook
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '../../common/spec/webhook.yaml'
+      responses:
+        200:
+          description: webhook is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '../../common/spec/webhook.yaml'
+    delete:
+      operationId: deleteWebHook
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      responses:
+        200:
+          description: webhook is deleted
+  "/settings/counter":
+    get:
+      operationId: listCounters
+      tags:
+        - settings
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: counters are listed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/countersDetails'
+    put:
+      operationId: updateCounters
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/countersDetails'
+      responses:
+        200:
+          description: counters are updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/countersDetails'
+  "/settings/custom-form/{domainObject}":
+    parameters:
+      - name: domainObject
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: showCustomForm
+      tags:
+        - settings
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: custom form is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+    put:
+      operationId: updateCustomForm
+      tags:
+        - settings
+      x-echosec:
+        function: can_admin_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/customForm'
+      responses:
+        200:
+          description: custom form updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/customForm'
+
+  "/analytics/supply-needs":
+    get:
+      operationId: showSupplyNeeds
+      tags:
+        - analytics
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      responses:
+        200:
+          description: supply needs are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/missingRawMaterial'
+  "/analytics/supply-needs/_calculate":
+    post:
+      operationId: calculateSupplyNeeds
+      tags:
+        - analytics
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/supplyNeedsDetails'
+      responses:
+        200:
+          description: supply needs are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/missingRawMaterial'
+
+  "/analytics/supply-needs/_calculate-for-production":
+    post:
+      operationId: calculateSupplyNeedsForProduction
+      tags:
+        - analytics
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/supplyNeedsDetails'
+
+      responses:
+        200:
+          description: production needs are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/missingRawMaterial'
+
+  "/analytics/supply-needs/_calculate-for-production-phase":
+    post:
+      operationId: calculateSupplyNeedsForProductionPhase
+      tags:
+        - analytics
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/supplyNeedsDetails'
+      responses:
+        200:
+          description: production needs are shown
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/missingRawMaterial'
+
+  "/supplier":
+    get:
+      operationId: listSuppliers
+      summary: lists the suppliers
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_viewer
+      responses:
+        200:
+          description: suppliers listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/supplierSummary'
+    put:
+      operationId: createSupplier
+      parameters:
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - ordinary
+              - self
+      summary: creates a new supplier
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/supplierDetails'
+      responses:
+        200:
+          description: supplier created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/supplierDetails'
+  "/supplier/_self":
+    get:
+      operationId: showSelfSupplier
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: self supplier returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/supplierDetails'
+    post:
+      operationId: upsertSelfSupplier
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: self upserted
+  "/supplier/_categories":
+    get:
+      operationId: listSupplierCategories
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: categories are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+  "/supplier/_export":
+    get:
+      operationId: exportSuppliers
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_viewer
+      responses:
+        200:
+          description: suppliers successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+
+  "/supplier/{supplierId}":
+    parameters:
+      - name: supplierId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showSupplier
+      summary: shows the details of a supplier
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_viewer
+      responses:
+        200:
+          description: supplier displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/supplierDetails'
+    put:
+      operationId: updateSupplier
+      summary: updates a supplier
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/supplierDetails'
+      responses:
+        200:
+          description: supplier updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/supplierDetails'
+    delete:
+      operationId: archiveSupplier
+      summary: deletes a supplier
+      tags:
+        - suppliers
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - supplier_editor
+      responses:
+        200:
+          description: supplier is archived
+
+  "/supplier/{supplierId}/raw-material":
+    parameters:
+      - name: supplierId
+        in: path
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: archived
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: mode
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+            - all
+            - purchasable
+            - usable
+      - name: aggregate-of
+        in: query
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+    get:
+      operationId: listRawMaterialsBySupplier
+      summary: lists the raw material definitions for a given supplier
+      tags:
+        - suppliers
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_viewer
+      responses:
+        200:
+          description: raw materials listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialSummary'
+  "/supplier/{supplierId}/raw-material/_match":
+    post:
+      operationId: matchSupplierRawMaterials
+      parameters:
+        - name: supplierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/rawMaterialMatchRequest'
+      responses:
+        200:
+          description: matcher is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialMatchResponse'
+  "/supplier/{supplierId}/order":
+    parameters:
+      - name: supplierId
+        in: path
+        schema:
+          type: string
+          format: uuid
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 0
+      - name: search
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: archived
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: query
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: from
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: false
+        schema:
+          type: string
+          format: date-time
+    get:
+      operationId: listOrdersBySupplier
+      summary: lists the orders for the given supplier
+      tags:
+        - suppliers
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: orders are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/orderSummary'
+  "/raw-material":
+    get:
+      operationId: listRawMaterials
+      summary: lists the raw materials
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: aggregate-of
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - purchasable
+              - usable
+              - raw-usable
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: in
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_viewer
+      responses:
+        200:
+          description: raw materials listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialSummary'
+    put:
+      operationId: createRawMaterial
+      summary: creates a raw material
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/rawMaterialDetails'
+      responses:
+        200:
+          description: raw material created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialDetails'
+  "/raw-material/_categories":
+    get:
+      operationId: listRawMaterialCategories
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+      responses:
+        200:
+          description: categories are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+  "/raw-material/_match":
+    post:
+      operationId: matchRawMaterials
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/rawMaterialMatchRequest'
+      responses:
+        200:
+          description: matcher is returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialMatchResponse'
+
+
+
+  "/raw-material/_export":
+    get:
+      operationId: exportRawMaterials
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: archived
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: aggregate-of
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - all
+              - purchasable
+              - usable
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_viewer
+      responses:
+        200:
+          description: raw materials successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+  "/raw-material/{rawMaterialId}":
+    parameters:
+      - name: rawMaterialId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showRawMaterial
+      summary: shows a raw material
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_viewer
+      responses:
+        200:
+          description: raw materials details
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialDetails'
+    put:
+      operationId: updateRawMaterial
+      summary: updates a raw material
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/rawMaterialDetails'
+      responses:
+        200:
+          description: raw material updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialDetails'
+    delete:
+      operationId: archiveRawMaterial
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_editor
+      responses:
+        200:
+          description: raw material is archived
+
+  "/raw-material/{rawMaterialId}/alternatives":
+    parameters:
+      - name: rawMaterialId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listRawMaterialAlternatives
+      summary: lists raw material alternatives
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_viewer
+      responses:
+        200:
+          description: raw material alternatives
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialSummary'
+    put:
+      operationId: updateRawMaterialAlternatives
+      summary: updates raw material alternatives
+      tags:
+        - raw materials
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+      responses:
+        200:
+          description: raw material updated
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialSummary'
+  "/raw-material/{rawMaterialId}/inventory":
+    get:
+      operationId: listRawMaterialInventoryItemsByRawMaterial
+      summary: shows the inventory for a given raw material
+      tags:
+        - raw materials
+        - inventory
+      parameters:
+        - name: rawMaterialId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      responses:
+        200:
+          description: inventory items listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialInventoryItemSummary'
+  "/raw-material/{rawMaterialId}/inventory/_adjust":
+    post:
+      operationId: adjustRawMaterialInventory
+      tags:
+        - raw materials
+        - inventory
+        -
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_editor
+      parameters:
+        - name: rawMaterialId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/rawMaterialInventoryAdjustment'
+      responses:
+        200:
+          description: adjustment executed
+
+  "/inventory/raw-material":
+    get:
+      operationId: groupedListRawMaterialInventoryItems
+      summary: lists the raw materials inventory
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - inventory
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      responses:
+        200:
+          description: raw material inventory listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/groupedRawMaterialInventoryItemSummary'
+
+  "/inventory/raw-material/_compute-value":
+    post:
+      operationId: computeRawMaterialInventoryValue
+      x-echosec:
+        function: can_access_tenant
+      tags:
+        - inventory
+      responses:
+        200:
+          description: value is computed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialsInventoryValue'
+#  "/inventory/raw-material/_compute-multi-availability":
+#    post:
+#      operationId: computeMultiAvailability
+#      x-echosec:
+#        function: can_access_tenant
+#      tags:
+#        - inventory
+#      requestBody:
+#        content:
+#          "application/json":
+#            schema:
+#              $ref: '#/components/schemas/computeMultiAvailability'
+#      responses:
+#        200:
+#          description: |-
+#            availability computed. The response will contain one item for each requested item.
+#            The materials listed represent the amount of materials THAT ARE MISSING. It goes that if the materials
+#            are not missing, the materials list is empty.
+#          content:
+#            "application/json":
+#              schema:
+#                $ref: '#/components/schemas/computeMultiAvailability'
+
+
+  "/inventory/raw-material/event":
+    get:
+      operationId: listRawMaterialInventoryEvents
+      summary: lists the inventory events
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      tags:
+        - inventory
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      responses:
+        200:
+          description: events listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/rawMaterialInventoryEventSummary'
+
+  "/inventory/raw-material/{rawMaterialInventoryItemId}":
+    parameters:
+      - name: rawMaterialInventoryItemId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getRawMaterialInventoryItem
+      summary: shows an inventory item
+      tags:
+        - inventory
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - raw_material_inventory_viewer
+      responses:
+        200:
+          description: raw material inventory item returned
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/rawMaterialInventoryItemDetails'
+
+  "/order":
+    get:
+      operationId: listOrders
+      summary: lists the orders
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: orders returned
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/orderSummary'
+    put:
+      operationId: createOrder
+      summary: creates an order
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/orderDetails'
+      responses:
+        200:
+          description: order created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+
+  "/order/_active":
+    get:
+      operationId: listActiveOrders
+      summary: lists active orders
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: active orders returned
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/orderSummary'
+
+  "/order/_last_two_month_purchases":
+    get:
+      operationId: lastTwoMonthPurchases
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: last two month purchases are returned
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/monthlyPurchases'
+
+  "/order/_createBulk":
+    post:
+      operationId: createBulkOrder
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/bulkOrderDetails'
+      responses:
+        200:
+          description: Order(s) created
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/orderDetails'
+
+
+
+  "/order/_export":
+    get:
+      operationId: exportOrders
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: orders successfully exported
+          content:
+            "text/csv":
+              schema:
+                type: string
+                format: binary
+  "/order/{orderId}":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showOrder
+      summary: shows an order
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: order displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+    put:
+      operationId: updateOrder
+      summary: updates an order
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/orderDetails'
+      responses:
+        200:
+          description: order updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+    delete:
+      operationId: archiveOrder
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      responses:
+        200:
+          description: order is archived
+  "/order/{orderId}/_compute-completion":
+    parameters:
+      - name: orderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: computeOrderCompletion
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_viewer
+      responses:
+        200:
+          description: completion computed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/computeOrderCompletionDetails'
+
+  "/order/{orderId}/_accept":
+    post:
+      operationId: acceptOrder
+      summary: flags an order as accepted by the supplier
+      description: |- 
+        Flags an order as accepted by the supplier. It also kicks off a workflow in which the items are marked as 
+        "inbound", and an event is generated
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      responses:
+        200:
+          description: order accepted
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+  "/order/{orderId}/_reject":
+    post:
+      operationId: rejectOrder
+      summary: flags an order as rejected
+      description: |-
+        Flags an order as rejected by the supplier.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      responses:
+        200:
+          description: order rejected
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/orderDetails'
+  "/order/{orderId}/_send":
+    post:
+      operationId: sendOrder
+      summary: sends an order
+      description: |-
+        sends an order
+      tags:
+        - orders
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_order_editor
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: order is sent
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/sendOrderCommand'
+
+  "/transport-document":
+    get:
+      operationId: listTransportDocuments
+      summary: lists the transport documents
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: order_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport documents are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/transportDocumentSummary'
+    put:
+      operationId: createTransportDocument
+      summary: creates a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/transportDocumentDetails'
+      responses:
+        200:
+          description: transport document created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentSummary'
+  "/transport-document/_extract":
+    post:
+      operationId: extractTransportDocument
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/upload'
+      responses:
+        200:
+          description: "transport document is extracted"
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentExtract'
+
+  "/transport-document/{transportDocumentId}":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showTransportDocument
+      summary: shows a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport document is displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentDetails'
+    put:
+      operationId: updateTransportDocument
+      summary: updates a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/transportDocumentDetails'
+      responses:
+        200:
+          description: transport document updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentDetails'
+    delete:
+      operationId: archiveTransportDocument
+      description: archives a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      responses:
+        200:
+          description: transport document is archived
+  "/transport-document/{transportDocumentId}/_accept":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: acceptTransportDocument
+      summary: flags a transport document as accepted
+      description: |-
+        Flags a transport document as accepted. Additionally it kicks off a workflow that moves inventory items from
+        inbound to "in stock" and an event is generated.
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      responses:
+        200:
+          description: transport document verified against order
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/transportDocumentDetails'
+  "/outbound-transport-document":
+    get:
+      operationId: listOutboundTransportDocument
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      tags:
+        - transport documents
+      responses:
+        200:
+          description: lists outbound transport documents
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/outboundTransportDocumentSummary'
+    put:
+      operationId: createOutboundTransportDocument
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/outboundTransportDocumentDetails'
+      responses:
+        200:
+          description: transport document created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/outboundTransportDocumentDetails'
+  "/outbound-transport-document/{transportDocumentId}":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showOutboundTransportDocument
+      summary: shows an outbound transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport document is displayed
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/outboundTransportDocumentDetails'
+    put:
+      operationId: updateOutboundTransportDocument
+      summary: updates a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/outboundTransportDocumentDetails'
+      responses:
+        200:
+          description: transport document updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/outboundTransportDocumentDetails'
+    delete:
+      operationId: archiveOutboundTransportDocument
+      description: archives a transport document
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_viewer
+      responses:
+        200:
+          description: transport document is archived
+  "/outbound-transport-document/{transportDocumentId}/_accept":
+    parameters:
+      - name: transportDocumentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    post:
+      operationId: acceptOutboundTransportDocument
+      summary: flags a transport document as accepted
+      tags:
+        - transport documents
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - transport_document_editor
+      responses:
+        200:
+          description: transport document verified against order
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/outboundTransportDocumentDetails'
+  "/purchase-invoice":
+    get:
+      operationId: listInvoices
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - purchase invoices
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_invoices_viewer
+      responses:
+        200:
+          description: invoices are listed
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/invoiceSummary'
+    put:
+      operationId: createInvoice
+      tags:
+        - purchase invoices
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_invoices_viewer
+          - purchase_invoices_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/invoiceDetails'
+      responses:
+        200:
+          description: invoice is created
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/invoiceDetails'
+  "/purchase-invoice/{invoiceId}":
+    parameters:
+      - name: invoiceId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: showInvoice
+      tags:
+        - purchase invoices
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_invoices_viewer
+      responses:
+        200:
+          description: invoice is shown
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/invoiceDetails'
+    put:
+      operationId: updateInvoice
+      tags:
+        - purchase invoices
+      x-echosec:
+        function: can_access_tenant
+        params:
+          - purchase_invoices_viewer
+          - purchase_invoices_editor
+      requestBody:
+        content:
+          "application/json":
+            schema:
+              $ref: '#/components/schemas/invoiceDetails'
+      responses:
+        200:
+          description: invoice is updated
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/invoiceDetails'
+  "/internal/purchase-invoice/_start-ingestion":
+    post:
+      operationId: internalStartIngestionPurchaseInvoices
+      parameters:
+        - name: simulate
+          in: query
+          required: false
+          schema:
+            type: boolean
+      tags:
+        - internal
+      x-echosec:
+        function: is_anonymous
+      requestBody:
+        content:
+          "application/xml":
+            schema:
+              type: object
+              properties: {}
+      responses:
+        200:
+          description: ingestion succeeded
+components:
+  schemas:
+    settings:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - templates
+          properties:
+            templates:
+              $ref: '#/components/schemas/templates_attr'
+    templates_attr:
+      required:
+        - purchase_order_id_template
+      properties:
+        purchase_order_id_template:
+          type: string
+    supplierSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - name
+        - categories
+        - vat_no
+        - phones
+        - emails
+        - default_currency
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 128
+        categories:
+          type: array
+          items:
+            type: string
+        vat_no:
+          type: string
+        phones:
+          type: array
+          items:
+            $ref: '../../common/spec/phoneAttr.yaml'
+        default_currency:
+          type: string
+        emails:
+          type: array
+          items:
+            $ref: '../../common/spec/emailAttr.yaml'
+        mode:
+          type: string
+          enum:
+            - ordinary
+            - self
+    supplierDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/supplierSummary'
+        - required:
+            - addresses
+            - bank
+          properties:
+            description:
+              type: string
+              maxLength: 128
+            addresses:
+              type: array
+              items:
+                $ref: '../../common/spec/addressAttr.yaml'
+            contact_name:
+              type: string
+            website:
+              type: string
+            payment_method:
+              type: string
+            bank:
+              $ref: '../../common/spec/bankAttr.yaml'
+    "rawMaterialSummary":
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - external_id
+        - name
+        - categories
+        - supplier_id
+        - uom
+        - minimum_quantity
+      properties:
+        supplier_id:
+          type: string
+          format: uuid
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        lead_time:
+          type: string
+        uom:
+          type: string
+          default: unit
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        aggregate_of_id:
+          type: string
+          format: uuid
+        aggregate_quantity:
+          type: number
+          format: float
+        created:
+          $ref: '../../common/spec/dateAttr.yaml'
+        prices:
+          $ref: '../../common/spec/pricesAttr.yaml'
+        prod_id:
+          type: string
+          format: uuid
+        purchasable_product_id:
+          type: string
+          format: uuid
+        minimum_quantity:
+          type: number
+          format: float
+    "rawMaterialDetails":
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/rawMaterialSummary'
+        - properties:
+            attributes:
+              type: object
+              additionalProperties: true
+            aggregate_of_id:
+              type: string
+              format: uuid
+            aggregate_quantity:
+              type: number
+              format: float
+    "rawMaterialInventoryBuckets":
+      x-go-type: attrs.RawMaterialBucketsAttr
+      properties:
+        inbound:
+          type: number
+          format: float
+        in_stock:
+          type: number
+          format: float
+        in_use:
+          type: number
+          format: float
+    "rawMaterialInventory":
+      x-go-type: domain.ComputedRawMaterialInventoryItem
+      properties:
+        inbound:
+          type: number
+          format: float
+        in_stock:
+          type: number
+          format: float
+        in_use:
+          type: number
+          format: float
+        ordered:
+          type: number
+          format: float
+        needed:
+          type: number
+          format: float
+        missing:
+          type: number
+          format: float
+    "groupedRawMaterialInventoryItemSummary":
+      required:
+        - raw_material_id
+        - external_id
+        - name
+        - uom
+        - buckets
+        - minimum_quantity
+        - categories
+        - supplier_name
+      properties:
+        raw_material_id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        name:
+          type: string
+        uom:
+          type: string
+        buckets:
+          x-go-type: datatypes.JSONType[RawMaterialInventoryBuckets]
+          properties:
+           inbound:
+             type: number
+           in_stock:
+             type: number
+           in_use:
+             type: number
+        minimum_quantity:
+          type: number
+          format: float
+        categories:
+          x-go-type: datatypes.JSONSlice[string]
+          type: array
+          items:
+            type: string
+        supplier_name:
+          type: string
+        prod_id:
+          type: string
+          format: uuid
+        warehouse_attr:
+          x-go-type: datatypes.JSONType[attrs.WarehouseAttr]
+          type: object
+          required:
+            - id
+            - name
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            supplier_id:
+              type: string
+              format: uuid
+        warehouse_id:
+          type: string
+          format: uuid
+
+    "rawMaterialInventoryItemSummary":
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - raw_material_id
+        - name
+        - external_id
+      properties:
+        id:
+          type: string
+          format: uuid
+        buckets:
+          $ref: '#/components/schemas/rawMaterialInventoryBuckets'
+        raw_material_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        external_id:
+          type: string
+        order_id:
+          type: string
+          format: uuid
+        order:
+          $ref: '#/components/schemas/orderSummary'
+    missingRawMaterial:
+      allOf:
+        - $ref: '#/components/schemas/rawMaterialSummary'
+        - type: object
+          required:
+            - inventory
+          properties:
+            inventory:
+              $ref: '#/components/schemas/rawMaterialInventory'
+            estimated_cost:
+              $ref: '../../common/spec/pricesAttr.yaml'
+            alternatives:
+              type: array
+              items:
+                $ref: '#/components/schemas/missingRawMaterial'
+
+    "rawMaterialInventoryItemDetails":
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/rawMaterialInventoryItemSummary'
+        - required:
+            - prices
+          properties:
+            prices:
+              $ref: '../../common/spec/pricesAttr.yaml'
+    "rawMaterialInventoryEventSummary":
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - time
+        - from_bucket
+        - to_bucket
+        - raw_material_external_id
+        - raw_material_name
+        - reason_type
+        - refs
+        - quantity
+      properties:
+        id:
+          type: string
+          format: uuid
+        time:
+          type: string
+          format: date-time
+        from_bucket:
+          type: string
+          enum:
+            - ""
+            - inbound
+            - in_stock
+            - in_use
+        to_bucket:
+          type: string
+          enum:
+            - ""
+            - inbound
+            - in_stock
+            - in_use
+            - consumed
+            - discarded
+        raw_material_name:
+          type: string
+        raw_material_external_id:
+          type: string
+        reason_type:
+          type: string
+        refs:
+          type: array
+          minItems: 0
+          items:
+            $ref: '../../common/spec/genericAttr.yaml'
+        reason_description:
+          type: string
+        quantity:
+          type: number
+          format: float
+        inventory_item:
+          type: object
+          properties:
+            warehouse_attr:
+              $ref: '../../common/spec/warehouseAttr.yaml'
+            warehouse_id:
+              type: string
+              format: uuid
+
+    "rawMaterialInventoryEventDetails":
+      allOf:
+        - $ref: '#/components/schemas/rawMaterialInventoryEventSummary'
+        - required:
+            - raw_material_id
+          properties:
+            raw_material_id:
+              type: string
+              format: uuid
+            raw_material_item_id:
+              type: string
+              format: uuid
+            operator:
+              $ref: '../../common/spec/userAttr.yaml'
+    rawMaterialsInventoryValue:
+      required:
+        - items
+        - value
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/rawMaterialsInventoryValueItem'
+        value:
+          type: number
+          format: float
+    rawMaterialsInventoryValueItem:
+      required:
+        - id
+        - name
+        - extra_id
+        - quantity
+        - currency
+        - value
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        extra_id:
+          type: string
+        quantity:
+          type: number
+          format: float
+        currency:
+          type: string
+        value:
+          type: number
+          format: float
+
+    orderSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - name
+        - expected_delivery_time
+        - status
+        - total_vat_incl
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        name:
+          type: string
+        time:
+          type: string
+          format: date-time
+        expected_delivery_time:
+          type: string
+          format: date-time
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        status:
+          type: string
+          enum:
+            - draft
+            - sent
+            - accepted
+            - shipped
+            - rejected
+        default_currency:
+          type: string
+        total_vat_incl:
+          type: number
+          format: float
+        buckets:
+          $ref: '#/components/schemas/rawMaterialInventoryBuckets'
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+    orderDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/orderSummary'
+        - required:
+            - supplier_id
+            - raw_materials
+            - payment_method
+            - shipping_address
+            - total
+          properties:
+            supplier_id:
+              type: string
+              format: uuid
+            payment_method:
+              type: string
+            shipping_address:
+              type: string
+            buyer_attr:
+              $ref: '../../common/spec/companyAttr.yaml'
+            supplier:
+              $ref: '#/components/schemas/supplierSummary'
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/pricedQuantifiedItem.yaml'
+            total:
+              type: number
+              format: float
+
+    bulkOrderDetails:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - raw_material_id
+        - quantity
+      properties:
+        raw_material_id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+
+    transportDocumentSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - external_id
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - inbound
+            - accepted
+        time:
+          type: string
+          format: date-time
+        order_internal_id:
+          type: string
+        order_id:
+          type: string
+          format: uuid
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+    transportDocumentDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/transportDocumentSummary'
+        - required:
+            - raw_materials
+          properties:
+            weight:
+              type: number
+              format: float
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            supplier_id:
+              type: string
+              format: uuid
+            order:
+              $ref: '#/components/schemas/orderDetails'
+    upload:
+      required:
+        - file
+        - name
+      properties:
+        file:
+          type: string
+        name:
+          type: string
+    transportDocumentExtract:
+      required:
+        - raw_materials
+      properties:
+        external_id:
+          type: string
+        order_id:
+          type: string
+          format: uuid
+        order_internal_id:
+          type: string
+        raw_materials:
+          type: array
+          items:
+            $ref: '../../common/spec/quantifiedItem.yaml'
+    transportDocumentVerification:
+      properties:
+        raw_material_discrepancies:
+          type: array
+          items:
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              quantity:
+                type: number
+                format: float
+    outboundTransportDocumentSummary:
+      x-oapi-codegen-extra-tags:
+        arke: nod
+      required:
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        internal_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - accepted
+        time:
+          type: string
+          format: date-time
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+    outboundTransportDocumentDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/outboundTransportDocumentSummary'
+        - required:
+            - raw_materials
+            - shipping_address
+          properties:
+            weight:
+              type: number
+              format: float
+            raw_materials:
+              type: array
+              items:
+                $ref: '../../common/spec/quantifiedItem.yaml'
+            supplier_id:
+              type: string
+              format: uuid
+            shipping_address:
+              type: string
+            carrier:
+              type: string
+            reason:
+              type: string
+    invoiceLineAttr:
+      required:
+        - name
+        - quantity
+        - unit_price
+        - vat
+        - total
+        - total_vat_incl
+      properties:
+        external_id:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+          format: float
+        unit_price:
+          type: number
+          format: float
+        discount:
+          type: string
+        vat:
+          type: number
+          format: float
+        total:
+          type: number
+          format: float
+        total_vat_incl:
+          type: number
+          format: float
+    invoiceSummary:
+      required:
+        - external_id
+        - time
+        - supplier_attr
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        time:
+          type: string
+          format: date-time
+        supplier_attr:
+          $ref: '../../common/spec/companyAttr.yaml'
+        status:
+          type:
+            string
+          default: inbound
+          enum:
+            - inbound
+            - verified
+            - paid
+    invoiceDetails:
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - $ref: '#/components/schemas/invoiceSummary'
+        - required:
+            - currency
+            - receiver_attr
+            - invoice_lines
+            - total
+            - total_vat_incl
+          properties:
+            currency:
+              type: string
+            receiver_attr:
+              $ref: '../../common/spec/companyAttr.yaml'
+            invoice_lines:
+              type: array
+              items:
+                $ref: '#/components/schemas/invoiceLineAttr'
+            supplier:
+              $ref: '#/components/schemas/supplierSummary'
+            order:
+              $ref: '#/components/schemas/orderSummary'
+            supplier_id:
+              type: string
+              format: uuid
+            order_internal_id:
+              type: string
+            order_id:
+              type: string
+              format: uuid
+            total:
+              type: number
+              format: float
+            total_vat_incl:
+              type: number
+              format: float
+    "sendOrderCommand":
+      required:
+        - dry_run
+      properties:
+        recipient:
+          type: string
+        email_body:
+          type: string
+        dry_run:
+          type: boolean
+    "countersDetails":
+      allOf:
+        - $ref: '../../common/spec/base.yaml'
+        - required:
+            - global_counter
+            - po_counter
+            - year
+          properties:
+            global_counter:
+              type: integer
+              x-go-type: uint64
+            po_counter:
+              type: integer
+              x-go-type: uint64
+            year:
+              type: integer
+    "computeOrderCompletionDetails":
+      required:
+        - raw_materials
+      properties:
+        raw_materials:
+          type: array
+          items:
+            $ref: '#/components/schemas/computeOrderCompletionItem'
+    "computeOrderCompletionItem":
+      required:
+        - name
+        - id
+        - extra_id
+        - uom
+        - expected
+        - delivered
+      properties:
+        name:
+          type: string
+        extra_id:
+          type: string
+        id:
+          type: string
+          format: uuid
+        uom:
+          type: string
+        expected:
+          type: number
+          format: float
+        delivered:
+          type: number
+          format: float
+    "rawMaterialInventoryAdjustment":
+      required:
+        - quantity
+        - reason
+        - warehouse_id
+        - warehouse_attr
+      properties:
+        bucket:
+          type: string
+        quantity:
+          type: number
+          format: float
+        reason:
+          type: string
+        warehouse_attr:
+          $ref: '../../common/spec/warehouseAttr.yaml'
+        warehouse_id:
+          type: string
+          format: uuid
+
+    "customForm":
+      required:
+        - definitions
+      properties:
+        generation:
+          type: integer
+        definitions:
+          type: array
+          items:
+            $ref: '../../common/spec/customFieldDefinitionAttr.yaml'
+
+    monthlyPurchases:
+      type: object
+      required:
+        - month
+        - total
+        - order_count
+      properties:
+        month:
+          type: string
+        total:
+          type: number
+          format: float
+        order_count:
+          type: integer
+
+    supplyNeedsDetails:
+      required:
+        - id
+        - quantity
+      properties:
+        id:
+          type: string
+          format: uuid
+        quantity:
+          type: number
+          format: float
+
+    "rawMaterialMatchRequest":
+      type: array
+      items:
+        $ref: '#/components/schemas/rawMaterialMatchRequestItem'
+
+    "rawMaterialMatchRequestItem":
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        extra_id:
+          type: string
+        name:
+          type: string
+
+    "rawMaterialMatchResponse":
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/rawMaterialMatchResponseItem'
+
+    "rawMaterialMatchResponseItem":
+      required:
+        - id
+        - name
+        - extra_id
+        - score
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        extra_id:
+          type: string
+        score:
+          type: number

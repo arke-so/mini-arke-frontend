@@ -1,0 +1,10 @@
+apis/DefaultApi.ts
+apis/index.ts
+index.ts
+models/AgentAnswer.ts
+models/AgentQuestion.ts
+models/DbAnswer.ts
+models/DbQuestion.ts
+models/HistoryItem.ts
+models/index.ts
+runtime.ts

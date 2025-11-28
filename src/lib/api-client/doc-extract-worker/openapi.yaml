@@ -1,0 +1,382 @@
+openapi: 3.0.2
+info:
+  title: Document Extraction API
+  version: v1
+  description: API for extracting text and entities from documents using Google Document AI
+servers:
+  - url: /api/v1
+security:
+  - apiKey: []
+paths:
+  '/-/healthz':
+    get:
+      operationId: healthCheck
+      summary: Health check endpoint
+      tags:
+        - system
+      responses:
+        200:
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+  '/':
+    get:
+      operationId: mainInfo
+      summary: Get service information
+      tags:
+        - system
+      responses:
+        200:
+          description: Service information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  '/extract':
+    post:
+      operationId: extractText
+      summary: Extract text and entities from a document
+      tags:
+        - document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractionRequest'
+      responses:
+        200:
+          description: Document processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractionResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  '/convert/text-to-pdf':
+    post:
+      operationId: convertTextToPdf
+      summary: Convert text to PDF
+      tags:
+        - document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextToPdfRequest'
+      responses:
+        200:
+          description: Text successfully converted to PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  '/convert/image-to-pdf':
+    post:
+      operationId: convertImageToPdf
+      summary: Convert image to PDF
+      tags:
+        - document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageToPdfRequest'
+      responses:
+        200:
+          description: Image successfully converted to PDF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversionResponse'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: Unauthorized
+          content:
+            text/plain:
+              schema:
+                type: string
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+
+  schemas:
+    DocumentExtractionType:
+      type: string
+      description: Type of document for specialized processing
+      enum:
+        - bom-extraction
+        - ddt-extraction
+      default: bom-extraction
+    ExtractionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Base64 encoded content of the document
+        filename:
+          type: string
+          description: Name of the file
+        mimeType:
+          type: string
+          description: MIME type of the document
+          enum: ['application/pdf', 'text/plain']
+          default: 'application/pdf'
+        documentType:
+          $ref: '#/components/schemas/DocumentExtractionType'
+        options:
+          type: object
+          description: Additional options for extraction
+          default: {}
+
+    ExtractionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        filename:
+          type: string
+        fileSize:
+          type: integer
+        fileSizeFormatted:
+          type: string
+        documentType:
+          $ref: '#/components/schemas/DocumentExtractionType'
+        documentAIResult:
+          $ref: '#/components/schemas/BomExSpec'
+
+    TextToPdfRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Base64 encoded content of the text document
+        filename:
+          type: string
+          description: Name of the file
+        contentType:
+          type: string
+          description: MIME type of the content
+          default: text/plain
+        options:
+          type: object
+          description: Additional conversion options
+          default: {}
+
+    ImageToPdfRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Base64 encoded content of the image file
+        filename:
+          type: string
+          description: Name of the image file
+        contentType:
+          type: string
+          description: MIME type of the image (e.g., image/jpeg, image/png)
+        options:
+          type: object
+          description: Image conversion options
+          properties:
+            pageSize:
+              type: string
+              enum: [A4, Letter, auto]
+              default: A4
+            dpi:
+              type: integer
+              minimum: 72
+              maximum: 600
+              default: 300
+            preserveAspectRatio:
+              type: boolean
+              default: true
+            margin:
+              type: integer
+              minimum: 0
+              maximum: 100
+              default: 36
+          default: {}
+
+    ConversionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        originalFilename:
+          type: string
+        originalSize:
+          type: integer
+        originalSizeFormatted:
+          type: string
+        pdfSize:
+          type: integer
+        pdfSizeFormatted:
+          type: string
+        pdf:
+          type: string
+          description: Base64 encoded PDF content
+
+    DocumentEntity:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        mentionText:
+          type: string
+        confidence:
+          type: number
+          format: float
+        properties:
+          type: object
+          additionalProperties: true
+
+    BomExSpecAttrColor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+
+    ExtractedRawMaterial:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: number
+        uom:
+          type: string
+        attrColor:
+          $ref: '#/components/schemas/BomExSpecAttrColor'
+        attrSize:
+          type: string
+
+    ExSchemaBaseMetadata:
+      type: object
+      properties:
+        uid:
+          type: string
+        creationTimestamp:
+          type: string
+        annotations:
+          type: object
+          properties:
+            subtype:
+              type: string
+
+    BomExSpec:
+      type: object
+      properties:
+        name:
+          type: string
+        externalId:
+          type: string
+        attrColor:
+          $ref: '#/components/schemas/BomExSpecAttrColor'
+        rawMaterials:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExtractedRawMaterial'
+
+    BomExDocument:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        namespace:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/ExSchemaBaseMetadata'
+        spec:
+          $ref: '#/components/schemas/BomExSpec'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
