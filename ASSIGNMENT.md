@@ -4,11 +4,11 @@ This is the coding challenge for the Frontend Engineer role.
 
 ## Important
 
-Treat this as production code that needs to ship. Write clean, maintainable code that follows the patterns already in the project. Don't overthink it, just do what you'd normally do on the job!
+Treat this as production code that needs to ship. Please break down your work into multiple commits so we can review your approach and implementation process. Write clean, maintainable code that follows the patterns already established in the project. Don't overthink it—just do what you'd normally do on the job!
 
 ## Time expectation
 
-Our appetite for this feature is 2-3 hours. We value your time and designed this to be completable within that timeframe. Please don't spend significantly more time on it, we need to see some code, but we don't want to take up too much of your time. When submitting, let us know roughly how long you spent (no penalty if you go over, we'd just like to know!) 🙌
+Our appetite for this feature is ~2-3 hours, but we understand you might now be familiar with SvelteKit, so do not worry if you spend more time on it. We value your time and designed this to be completable within that timeframe. When submitting, let us know roughly how long you spent (no penalty if you go over, we'd just like to know!) 🙌
 
 ## The Goal
 
@@ -191,3 +191,7 @@ After the technical portion, we'll spend some time getting to know each other be
 If you have any questions about the assignment, feel free to reach out!
 
 We can't wait to see your submission! Good luck! 🚀
+
+## Your notes
+
+Feel free to add your notes here if you'd like to explain the rationale behind your implementation choices.
