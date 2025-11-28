@@ -172,9 +172,29 @@ await productionApi.lastTwoMonthProduction()
 
 See details in the file: `src/lib/api-client/product/models/MonthlyProduction.ts`
 
+## Styles
+
+1. The background of each card, you can use `bg-background`
+2. The icons:
+
+- Green:
+  backgorund: `emerald-500/10`
+  border: `emerald-500/20`
+  text: `emerald-600`
+
+- Pink:
+  backgorund: `pink-500/10`
+  border: `pink-500/20`
+  text: `pink-600`
+
+- Violet:
+  backgorund: `violet-500/10`
+  border: `violet-500/20`
+  text: `violet-600`
+
 ## Deliverable
 
-1. Fork this repository into a private repository named mini-arke-frontend
+1. Fork this repository into a private repository named `mini-arke-frontend`
 2. Implement the dashboard as explained above
 3. Implement unit tests, if you think it's worth
 4. Add @gufoscuro as collaborator to your private repo
@@ -182,7 +202,7 @@ See details in the file: `src/lib/api-client/product/models/MonthlyProduction.ts
 
 ## What comes next?
 
-The next step will be a 30-minute technical session where we'll work together on top of the code you submitted. This could be expanding the feature, writing tests, or something similar. Make sure to keep the project running on your local environment so we can dive right in.
+The next step will be a 45-60 minute technical session where we'll work together on top of the code you submitted. This could be expanding the feature, writing tests, or something similar. Make sure to keep the project running on your local environment so we can dive right in.
 
 After the technical portion, we'll spend some time getting to know each other better, learning about your background, what you're looking for in your next role, and answering any questions you have about the team and how we work. We'll follow up with you for next steps!
 
