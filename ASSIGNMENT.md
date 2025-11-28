@@ -122,7 +122,7 @@ import { createClientApiConfig } from '$api/clients-utils/supply-client-side'
 
 const analyticsApi = new AnalyticsApi(createClientApiConfig())
 const needs = await analyticsApi.showSupplyNeeds()
-counts = calculateSelectionCounts(
+const counts = calculateSelectionCounts(
   needs.map(item => ({
     selected: true,
     o: item,
