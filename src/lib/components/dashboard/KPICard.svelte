@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { Card } from '$ds/components/ui/card'
+  import SquareIcon from '$components/icons/SquareIcon.svelte'
   import { IcoNoir } from '$ds/components/icons/iconoir'
-  import type { SvelteComponent } from 'svelte'
+  import { Button } from '$ds/components/ui/button'
+  import { Card } from '$ds/components/ui/card'
   import { _ } from 'svelte-i18n'
 
   const iconColorClasses = {
@@ -22,60 +23,56 @@
     },
   }
 
-  export let icon: typeof SvelteComponent
+  export let icon: ConstructorOfATypedSvelteComponent
   export let iconColor: keyof typeof iconColorClasses = 'green'
-  export let showArrow: boolean = true
   export let loading: boolean = false
   export let error: string | null = null
 
   $: colorClasses = iconColorClasses[iconColor]
+  $: iconContainerClasses = error
+    ? 'border-destructive/20 bg-destructive/10'
+    : `${colorClasses.bg} ${colorClasses.border}`
+  $: showFooter = !loading && !error
 </script>
 
-<Card class="bg-background p-4 md:p-6">
-  <div class="flex items-start justify-between gap-4">
-    <div class="flex min-w-0 flex-1 items-start gap-4">
-      <div
-        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border {error
-          ? 'border-destructive/20 bg-destructive/10'
-          : colorClasses.bg + ' ' + colorClasses.border}">
-        {#if error}
-          <IcoNoir.X class="h-6 w-6 text-destructive" />
-        {:else}
-          <svelte:component this={icon} class="h-6 w-6 {loading ? 'opacity-30' : colorClasses.text}" />
-        {/if}
-      </div>
+<Card class="grid min-h-64 grid-rows-2 items-start gap-4 bg-background p-4 md:p-6">
+  <div class="flex gap-4">
+    {#if loading}
+      <div class="h-12 w-12 animate-pulse rounded-lg bg-muted" />
+    {:else}
+      <SquareIcon
+        icon={error ? IcoNoir.X : icon}
+        class="size-12 {iconContainerClasses}"
+        iconClass={`${colorClasses.text} h-6 w-6 ${error ? 'text-destructive' : ''}`} />
+    {/if}
 
-      <div class="flex min-w-0 flex-1 flex-col gap-1">
-        {#if loading}
-          <div class="h-8 w-24 animate-pulse rounded bg-muted" />
-          <div class="h-4 w-32 animate-pulse rounded bg-muted" />
-          <div class="mt-2 flex flex-col gap-0.5">
-            <div class="h-4 w-28 animate-pulse rounded bg-muted" />
-          </div>
-        {:else if error}
-          <h3 class="text-2xl font-bold text-destructive">{$_('Error')}</h3>
-          <div class="text-sm text-destructive">{error}</div>
-        {:else}
-          <slot name="metric" />
-          <slot name="description" />
-          <div class="mt-2 flex flex-col gap-0.5">
-            <slot name="details" />
-          </div>
-        {/if}
+    {#if loading}
+      <div class="flex flex-col gap-4">
+        <div class="h-6 w-32 animate-pulse rounded bg-muted" />
+        <div class="h-4 w-28 animate-pulse rounded bg-muted" />
       </div>
-    </div>
+    {:else if error}
+      <div>
+        <h3 class="text-2xl font-bold text-destructive">{$_('Error')}</h3>
+        <div class="text-sm text-destructive">{error}</div>
+      </div>
+    {:else}
+      <div class="flex min-w-0 flex-col gap-1">
+        <slot name="metric" />
+        <slot name="description" />
+      </div>
+    {/if}
+  </div>
 
-    {#if showArrow}
-      {#if loading}
-        <div class="flex h-8 w-8 shrink-0 animate-pulse items-center justify-center rounded-lg border bg-muted" />
-      {:else}
-        <button
-          type="button"
-          class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-muted transition-colors hover:bg-muted/80"
-          aria-label="View details">
-          <IcoNoir.ChevronRight class="h-4 w-4 text-muted-foreground" />
-        </button>
-      {/if}
+  <div class="flex h-full items-end justify-between">
+    {#if loading}
+      <div class="h-6 w-32 animate-pulse rounded bg-muted" />
+      <div class="flex h-8 w-8 animate-pulse items-center justify-center self-end rounded-lg bg-muted" />
+    {:else if showFooter}
+      <slot name="details" />
+      <Button class="bg-muted" variant="outline" size="icon" aria-label="View details">
+        <IcoNoir.ChevronRight class="h-4 w-4 text-muted-foreground" />
+      </Button>
     {/if}
   </div>
 </Card>
