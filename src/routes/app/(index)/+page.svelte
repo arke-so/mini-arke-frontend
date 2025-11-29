@@ -1,9 +1,10 @@
 <script lang="ts">
+  import ActiveSales from '$components/dashboard/ActiveSales.svelte'
+  import SalesThisMonth from '$components/dashboard/SalesThisMonth.svelte'
   import { Main } from '$components/main'
   import UserNotificationsList from '$components/user-notifications/UserNotificationsList.svelte'
   import UserNotificationsProvider from '$components/user-notifications/UserNotificationsProvider.svelte'
   import { notificationsStore } from '$stores/user-notifications'
-  import ActiveSales from '$components/dashboard/ActiveSales.svelte'
   import { onMount } from 'svelte'
   import { _ } from 'svelte-i18n'
 
@@ -17,7 +18,10 @@
 
   <div class="flex flex-col gap-6 md:h-[calc(100%-theme(spacing.navigation))] md:flex-row">
     <section class="flex-1">
-      <ActiveSales />
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <ActiveSales />
+        <SalesThisMonth />
+      </div>
     </section>
 
     <UserNotificationsProvider let:activity let:initialized>
