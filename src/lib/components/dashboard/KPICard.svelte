@@ -1,8 +1,9 @@
 <script lang="ts">
+  import IconButton from '$components/form/IconButton.svelte'
   import SquareIcon from '$components/icons/SquareIcon.svelte'
-  import { IcoNoir } from '$ds/components/icons/iconoir'
-  import { Button } from '$ds/components/ui/button'
+  import { IcoNoir, IconSize } from '$ds/components/icons/iconoir'
   import { Card } from '$ds/components/ui/card'
+  import { ArrowRight } from 'lucide-svelte'
   import { _ } from 'svelte-i18n'
 
   const iconColorClasses = {
@@ -70,9 +71,9 @@
       <div class="flex h-8 w-8 animate-pulse items-center justify-center self-end rounded-lg bg-muted" />
     {:else if showFooter}
       <slot name="details" />
-      <Button class="bg-muted" variant="outline" size="icon" aria-label="View details">
-        <IcoNoir.ChevronRight class="h-4 w-4 text-muted-foreground" />
-      </Button>
+      <IconButton class="bg-muted" variant="outline" tooltip={$_('View details')}>
+        <ArrowRight class={IconSize.Small} />
+      </IconButton>
     {/if}
   </div>
 </Card>
