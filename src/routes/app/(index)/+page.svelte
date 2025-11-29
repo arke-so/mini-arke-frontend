@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ActivePurchases from '$components/dashboard/ActivePurchases.svelte'
   import ActiveSales from '$components/dashboard/ActiveSales.svelte'
   import SalesThisMonth from '$components/dashboard/SalesThisMonth.svelte'
   import { Main } from '$components/main'
@@ -17,10 +18,13 @@
   </h1>
 
   <div class="flex flex-col gap-6 md:h-[calc(100%-theme(spacing.navigation))] md:flex-row">
-    <section class="flex-1">
-      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+    <section class="grid gap-4">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <ActiveSales />
         <SalesThisMonth />
+      </div>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ActivePurchases />
       </div>
     </section>
 

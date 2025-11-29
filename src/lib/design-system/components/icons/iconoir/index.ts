@@ -51,6 +51,7 @@ import TowerCheck from './tower-check.svelte'
 import Trash from './trash.svelte'
 import Upload from './upload.svelte'
 import Users from './users.svelte'
+import ShoppingBasket from 'lucide-svelte/icons/shopping-basket'
 
 export type Icon = SvelteComponent
 
@@ -105,6 +106,7 @@ export const IcoNoir = {
   Settings,
   Search,
   Shop,
+  ShoppingBasket,
   SwitchOff,
   SwitchOn,
   SortRows,

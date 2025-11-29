@@ -12,7 +12,7 @@
       border: 'border-emerald-500/20',
       text: 'text-emerald-600',
     },
-    purple: {
+    violet: {
       bg: 'bg-violet-500/10',
       border: 'border-violet-500/20',
       text: 'text-violet-600',
@@ -65,7 +65,7 @@
     {/if}
   </div>
 
-  <div class="flex h-full items-end justify-between">
+  <div class="flex h-full items-end justify-between gap-2">
     {#if loading}
       <div class="h-6 w-32 animate-pulse rounded bg-muted" />
       <div class="flex h-8 w-8 animate-pulse items-center justify-center self-end rounded-lg bg-muted" />
